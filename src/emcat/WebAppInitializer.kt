@@ -21,7 +21,7 @@ class WebAppInitializer : AbstractAnnotationConfigDispatcherServletInitializer()
 
 @Configuration
 @EnableWebMvc
-class ServletConfig : WebMvcConfigurer {
+open class ServletConfig : WebMvcConfigurer {
 	override fun configureDefaultServletHandling(configurer: DefaultServletHandlerConfigurer) {
 		global.log("Spring MVC就绪")
 		configurer.enable() // MVC未映射的请求交由容器提供的默认Servlet来处理

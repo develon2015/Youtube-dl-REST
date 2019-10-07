@@ -9,7 +9,7 @@ import org.springframework.context.event.EventListener
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter
 
 @Configuration
-class EventListener {
+open class EventListener {
 	@Autowired var mWebApplicationContext: ApplicationContext? = null
 
 	@EventListener fun onStarted(event: ContextRefreshedEvent) {
