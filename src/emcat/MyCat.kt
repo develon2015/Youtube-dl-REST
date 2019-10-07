@@ -37,8 +37,8 @@ class MyCat(val host: String = "0.0.0.0", val port: Int = 80,
 
 		global.log("初始化嵌入式Tomcat, 监听于 ${ host }:${ port }, 工作目录 ${ dir.getAbsolutePath() }, 主webapp上下文 ${ root }")
 		
-		Tomcat.addServlet(ctx, "default", DefaultServlet())
-		ctx.addServletMappingDecoded("/", "default", true)
+		Tomcat.addServlet(ctx, "default", StaticServlet(webappDir.getAbsolutePath()))
+//		ctx.addServletMappingDecoded("/", "default", true)
 	}
 	
 	/** 开始监听服务, 在此之前通过 cat 和 connector 等字段注入action */
