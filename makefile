@@ -29,6 +29,10 @@ bin:
 run:
 	sudo $(JK) $(CP) MainKt
 
+.PHONY:test 
+test:
+	$(JK) -cp bin TestKt
+
 .PHONY: clean
 clean:
 	rm -rf bin/* $(Proxy)

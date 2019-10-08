@@ -57,7 +57,7 @@ class Shell(val shell: String = "bash") {
 			global.log("可用 $n 字节")
 			val tmp = ByteArray(n)
 			output.read(tmp).toString()
-			result += String(tmp, Charset.forName("GBK"))
+			result += String(tmp, Charset.defaultCharset())
 			// await
 			if (System.currentTimeMillis() - startTime + loopWaitTime > timeout) return result // time out
 			Thread.sleep(loopWaitTime)
