@@ -2,8 +2,9 @@ import java.lang.*
 
 val global = Global()
 
-class Global {
+class Global(var log: Boolean = true) {
 	fun log(msg: Any?) {
-		System.out.println("[Log] -> ${ msg }")
+		if (log)
+			System.out.println("[Log] -> ${ msg }")
 	}
 }
