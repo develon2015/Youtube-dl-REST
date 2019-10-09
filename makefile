@@ -11,7 +11,7 @@ CP := -cp bin -cp 'lib/*/ref/*.jar'
 all: $(Proxy) | bin
 	@
 	echo 开始构建目标$(Target)
-	make -f $<
+	time make -f $<
 
 $(Proxy): src
 	@

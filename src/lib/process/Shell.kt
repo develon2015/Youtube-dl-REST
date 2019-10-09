@@ -21,7 +21,7 @@ class Shell(val shell: String = "bash") {
 
 	/**
 	 * 写入命令, 获取输出<br>
-	 * 在此之前可以调用 this#isAlive() 测试可用性2
+	 * 在此之前可以调用 this#isAlive() 测试可用性
 	 */
 	fun run(cmd: String, timeout: Long = 1000, loopWaitTime: Long = 100): String? {
 		var result = ""
