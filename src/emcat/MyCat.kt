@@ -80,5 +80,6 @@ class MyCat(val host: String = "0.0.0.0", val port: Int = 80,
 			}
 		} catch(e: Throwable) {}
 		try { socket.close() } catch(e: Throwable) {}
+		Thread.sleep(200)
 	}
 }

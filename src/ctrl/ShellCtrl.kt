@@ -18,7 +18,7 @@ class ShellCtrl {
 	}
 
 	@GetMapping("/sh") fun shell(req: HttpServletRequest) : String {
-		val cmd = URLDecoder.decode(req.getQueryString() ?: "")
+		val cmd = URLDecoder.decode(req.getQueryString() ?: "", "UTF-8")
 		global.log("收到sh请求: ${ cmd }")
 		val r = sh.run(cmd, 5000, 1000) ?: "无返回"
 		global.log("执行命令'${ cmd }'结果:\n${ r }")
