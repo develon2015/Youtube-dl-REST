@@ -32,7 +32,8 @@ class StaticServlet(val webappDir: String = "./webapps") : DefaultServlet() {
 			return super.service(req, resp)
 		}
 		global.log("404 for ${ req.getServletPath() }")
-		resp.setStatus(404)
-		resp.getWriter().print("""{"error":404}""")
+//		resp.setStatus(404)
+//		resp.getWriter().print("""{"error":404}""")
+		resp.setStatus(444)
 	}
 }

@@ -17,7 +17,7 @@ class DefaultController {
 
 	@GetMapping("/close") fun close() = Runtime.getRuntime().exit(0)
 
-	@GetMapping("/") fun index(response: HttpServletResponse) = "redirect: /index.html"
+	@GetMapping("/") fun index(response: HttpServletResponse) = "redirect:/index.html"
 	
 	@GetMapping("/test") @ResponseBody fun test() = "Spring"
 	

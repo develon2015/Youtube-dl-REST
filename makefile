@@ -4,7 +4,7 @@ Target := bin/MainKt.class
 Proxy := makefile_proxy
 KC := kc
 JK := jk
-CP := -cp bin -cp 'lib/*/ref/*.jar'
+CP := -cp bin -cp '*/*/ref/*.jar'
 
 
 .PHONY: all

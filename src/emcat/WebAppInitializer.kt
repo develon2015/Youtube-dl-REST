@@ -13,6 +13,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer
 import org.springframework.http.MediaType
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.SerializationFeature
 
 @ComponentScan(basePackageClasses = [WebAppInitializer::class, DefaultController::class])
 class WebAppInitializer : AbstractAnnotationConfigDispatcherServletInitializer() {
@@ -40,6 +42,9 @@ open class ServletConfig : WebMvcConfigurer {
 		converters.add(stringmc)
 		
 		val jsonmc = MappingJackson2HttpMessageConverter()
+		val mapper = jsonmc.getObjectMapper()
+		mapper.configure(SerializationFeature.INDENT_OUTPUT, true)
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 		converters.add(jsonmc)
 		global.log("消息转换器就绪")
 	}

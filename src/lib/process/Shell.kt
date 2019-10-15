@@ -32,8 +32,8 @@ class Shell(val shell: String = "bash") {
 		
 		while (ins.available() > 0 || errs.available() > 0) {
 			global.log("错误的字节 ${ ins.available() } ${ errs.available() }")
-			ins.skip(ins.available().toLong())
-			errs.skip(errs.available().toLong())
+			ins.available().toLong().let{ if (it > 0) ins.skip(it) }
+			errs.available().toLong().let{ if (it > 0) errs.skip(it) }
 			Thread.sleep(1)
 		}
 		outs.write("${ cmd }\n".toByteArray())
