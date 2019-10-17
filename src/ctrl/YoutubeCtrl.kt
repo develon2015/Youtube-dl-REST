@@ -19,10 +19,10 @@ class YoutubeCtrl {
 	data class Video(val id: Int = 0, val format: String = "未知视频", val scale: String = "", val frame: Int = 0, val rate: Int = 0, val info: String = "?", val size: Double = 0.0)
 	
 	data class DownloadRequest(val v: String = "", val format: String = "", val recode: String? = null)
-	data class DownloadResult(var downloading: Boolean = true, var downloadSucceed: Boolean = false, var dest: String = "")
+	data class DownloadResult(@JsonIgnore var downloading: Boolean = true, var downloadSucceed: Boolean = false, var dest: String = "")
 	val mapDownloading = HashMap<DownloadRequest, DownloadResult>()
 	
-	val baseDir = "./webapps/"
+	val baseDir = "./webapps"
 
 	// API: download?v=\w{11}&format=\d+x\d+&recode=\w+
 	// 如有必要，将视频编码为另一种格式(目前支持:mp4|flv|ogg|webm|mkv|avi)
@@ -49,14 +49,17 @@ class YoutubeCtrl {
 		if (result == null) { // 请求未在下载队列中, 先查看是否已存在目标, 再决定是否下载
 			global.log("$request 未在队列, 查看目标")
 			shell.ready()
-			var cmd = "ls ${ baseDir }/youtube-dl/${ format }/*.full.${ if (recode2 == null) "*" else recode2 }" // 如果没有指定 recode 参数, 那么匹配任意一个格式的资源
+			var cmd = """cd '${ baseDir }' && \ls youtube-dl/${ format }/*.full.${ if (recode2 == null) "*" else recode2 }""" // 如果没有指定 recode 参数, 那么匹配任意一个格式的资源
 			global.log(cmd)
 			val dest = shell.run(cmd)
-			if (shell.lastCode() == 0) {
+			if ("0".equals(shell.run("echo -n $? && cd ..")) ) {
 				global.log("查找到文件 $dest")
 				shell.exit()
-				return dest ?: "???"
+				result = DownloadResult(false, true, dest ?: "Error")
+				mapDownloading.put(request, result)
+				return mapOf("status" to result)
 			}
+			global.log("未找到目标, 开始下载$request")
 			// 启动下载, 加入队列
 			result = DownloadResult()
 			mapDownloading.put(request, result)
@@ -65,18 +68,23 @@ class YoutubeCtrl {
 
 			Thread{
 				shell.ready()
-				val r = shell.run(cmd, 120_000, 200) // 耗时操作
-				global.log(r, "下载结果")
+				val r = shell.run(cmd, 120_000, 2000) // 耗时操作
 				if (shell.lastCode() == 0) {
 					// 下载完成
-				}
+					global.log(r, "下载完成")
+					result.downloading = false
+					result.downloadSucceed = true
+					result.dest = "Unknown"
+				} else
+					global.log(r, "下载失败")
+				shell.exit()
 			}.start()
 		}
 		
-		if (result.downloading) return mapOf("statu" to Error("正在下载中"))
-		if (!result.downloading && result.downloadSucceed) return mapOf("statu" to result)
+//		if (result.downloading) return mapOf("status" to result)
+//		if (!result.downloading && result.downloadSucceed) return mapOf("status" to result)
 
-		return ""
+		return mapOf("status" to result)
 	}
 
 	// API: info?url

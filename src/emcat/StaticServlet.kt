@@ -25,7 +25,7 @@ class StaticServlet(val webappDir: String = "./webapps") : DefaultServlet() {
 			val file = File("${ webappDir }/${ path }")
 			isExists = file.exists()
 			global.log("查询文件 ${ file.getAbsolutePath() } : ${ isExists }")
-			list.put(path, isExists)
+//			list.put(path, isExists)
 		}
 		if (isExists) {
 			resp.setContentType(mime.get(path.substringAfterLast('.')) ?: "application/octet-stream") // 根据文件后缀名设置MIME
