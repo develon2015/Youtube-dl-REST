@@ -19,7 +19,7 @@ class YoutubeCtrl {
 	data class Video(val id: Int = 0, val format: String = "未知视频", val scale: String = "", val frame: Int = 0, val rate: Int = 0, val info: String = "?", val size: Double = 0.0)
 	
 	data class DownloadRequest(val v: String = "", val format: String = "", val recode: String? = null)
-	data class DownloadResult(@JsonIgnore var downloading: Boolean = true, var downloadSucceed: Boolean = false, var dest: String = "")
+	data class DownloadResult(var downloading: Boolean = true, var downloadSucceed: Boolean = false, var dest: String = "")
 	val mapDownloading = HashMap<DownloadRequest, DownloadResult>()
 	
 	val baseDir = "./webapps"
@@ -30,8 +30,6 @@ class YoutubeCtrl {
 		@RequestParam v: String,
 		@RequestParam format: String,
 		@RequestParam(required = false) recode: String?): Any {
-
-		global.log("下载 $v $format $recode")
 
 		if (!v.matches("[\\w-]{11}".toRegex()) ) return mapOf( "error" to Error("Video ID不正确"))
 		if (!format.matches("""(\d+|\d+x\d+)""".toRegex()) ) return mapOf("error" to Error("请求的音频和视频ID必须是数字, 合并格式为'视频IDx音频ID"))
@@ -49,7 +47,7 @@ class YoutubeCtrl {
 		if (result == null) { // 请求未在下载队列中, 先查看是否已存在目标, 再决定是否下载
 			global.log("$request 未在队列, 查看目标")
 			shell.ready()
-			var cmd = """cd '${ baseDir }' && \ls youtube-dl/${ format }/*.full.${ if (recode2 == null) "*" else recode2 }""" // 如果没有指定 recode 参数, 那么匹配任意一个格式的资源
+			var cmd = """cd '${ baseDir }' && \ls youtube-dl/${ format }/${ v }.${ if (recode2 == null) "*" else recode2 }""" // 如果没有指定 recode 参数, 那么匹配任意一个格式的资源
 			global.log(cmd)
 			val dest = shell.run(cmd)
 			if ("0".equals(shell.run("echo -n $? && cd ..")) ) {
@@ -63,8 +61,10 @@ class YoutubeCtrl {
 			// 启动下载, 加入队列
 			result = DownloadResult()
 			mapDownloading.put(request, result)
-			cmd = """youtube-dl 'https://www.youtube.com/watch?v=${ v }' -f ${ format2 } -o '${ baseDir }/youtube-dl/${ format }/%(title)s.full.%(ext)s' ${ if (recode2 != null) "--recode $recode2" else "" } -k"""
-			global.log("执行下载 $cmd")
+//			cmd = """youtube-dl 'https://www.youtube.com/watch?v=${ v }' -f ${ format2 } -o '${ baseDir }/youtube-dl/${ format }/%(title)s.full.%(ext)s' ${ if (recode2 != null) "--recode $recode2" else "" } -k"""
+			// 使用默认文件名是不明智的, 用视频ID作为文件名吧, 同时拉取元数据JSON
+			cmd = """youtube-dl 'https://www.youtube.com/watch?v=${ v }' -f ${ format2 } -o '${ baseDir }/youtube-dl/${ format }/${ v }.%(ext)s' ${ if (recode2 != null) "--recode $recode2" else "" } -k --write-info-json"""
+			global.log("$cmd", "执行下载")
 
 			Thread{
 				shell.ready()
@@ -74,7 +74,7 @@ class YoutubeCtrl {
 					global.log(r, "下载完成")
 					result.downloading = false
 					result.downloadSucceed = true
-					result.dest = "Unknown"
+					result.dest = "$r"
 				} else
 					global.log(r, "下载失败")
 				shell.exit()
