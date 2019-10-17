@@ -90,7 +90,12 @@ class YoutubeCtrl {
 					mapDownloading.set(request, DownloadResult(false, true, "$filename", "${ path }.info.json"))
 				} else {
 					global.log(r, "下载失败")
-					mapDownloading.set(request, DownloadResult(false, false, "下载失败"))
+					var err = ""
+					r?.split('\n')?.forEach{
+						if (it.matches("ERROR.*".toRegex()) )
+							err = it
+					}
+					mapDownloading.set(request, DownloadResult(false, false, "下载失败", err))
 				}
 				shell.exit()
 			}.start()
