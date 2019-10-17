@@ -8,16 +8,79 @@ import javax.servlet.http.HttpServletRequest
 import lib.process.Shell
 import org.springframework.web.bind.annotation.PathVariable
 import com.fasterxml.jackson.annotation.JsonIgnore
+import org.springframework.web.bind.annotation.RequestMapping
+import java.util.LinkedList
 
 @RestController
+@RequestMapping("/youtube")
 class YoutubeCtrl {
 	data class Error(val info: String = "Unknown error", val code: Int = 404)
 	data class Audio(val id: Int = 0, val format: String = "未知音频", val rate: Int = 0, val info: String = "?", val size: Double = 0.0)
 	data class Video(val id: Int = 0, val format: String = "未知视频", val scale: String = "", val frame: Int = 0, val rate: Int = 0, val info: String = "?", val size: Double = 0.0)
+	
+	data class DownloadRequest(val v: String = "", val format: String = "", val recode: String? = null)
+	data class DownloadResult(var downloading: Boolean = true, var downloadSucceed: Boolean = false, var dest: String = "")
+	val mapDownloading = HashMap<DownloadRequest, DownloadResult>()
+	
+	val baseDir = "./webapps/"
 
-	@GetMapping("/youtube/{opt:.+$}") fun youtube(req: HttpServletRequest, @PathVariable opt: String): Any {
-		global.log("opt -> $opt")
-		if (opt !in listOf("info", "download")) throw RuntimeException("未知的操作")
+	// API: download?v=\w{11}&format=\d+x\d+&recode=\w+
+	// 如有必要，将视频编码为另一种格式(目前支持:mp4|flv|ogg|webm|mkv|avi)
+	@GetMapping("download{:$}") fun download(
+		@RequestParam v: String,
+		@RequestParam format: String,
+		@RequestParam(required = false) recode: String?): Any {
+
+		global.log("下载 $v $format $recode")
+
+		if (!v.matches("[\\w-]{11}".toRegex()) ) return mapOf( "error" to Error("Video ID不正确"))
+		if (!format.matches("""(\d+|\d+x\d+)""".toRegex()) ) return mapOf("error" to Error("请求的音频和视频ID必须是数字, 合并格式为'视频IDx音频ID"))
+
+		val format2 = format.replace("x", "+")
+		// 过滤recode
+		var recode2 = if (recode != null && recode in listOf("mp4", "flv", "webm", "mkv", "avi")) recode else null // 如果指定了 recode 参数并且有效, 否则置为null
+		
+		val request = DownloadRequest(v, format2, recode2)
+		global.log(request)
+
+		val shell = Shell()
+		var result = mapDownloading.get(request)
+
+		if (result == null) { // 请求未在下载队列中, 先查看是否已存在目标, 再决定是否下载
+			global.log("$request 未在队列, 查看目标")
+			shell.ready()
+			var cmd = "ls ${ baseDir }/youtube-dl/${ format }/*.full.${ if (recode2 == null) "*" else recode2 }" // 如果没有指定 recode 参数, 那么匹配任意一个格式的资源
+			global.log(cmd)
+			val dest = shell.run(cmd)
+			if (shell.lastCode() == 0) {
+				global.log("查找到文件 $dest")
+				shell.exit()
+				return dest ?: "???"
+			}
+			// 启动下载, 加入队列
+			result = DownloadResult()
+			mapDownloading.put(request, result)
+			cmd = """youtube-dl 'https://www.youtube.com/watch?v=${ v }' -f ${ format2 } -o '${ baseDir }/youtube-dl/${ format }/%(title)s.full.%(ext)s' ${ if (recode2 != null) "--recode $recode2" else "" } -k"""
+			global.log("执行下载 $cmd")
+
+			Thread{
+				shell.ready()
+				val r = shell.run(cmd, 120_000, 200) // 耗时操作
+				global.log(r, "下载结果")
+				if (shell.lastCode() == 0) {
+					// 下载完成
+				}
+			}.start()
+		}
+		
+		if (result.downloading) return mapOf("statu" to Error("正在下载中"))
+		if (!result.downloading && result.downloadSucceed) return mapOf("statu" to result)
+
+		return ""
+	}
+
+	// API: info?url
+	@GetMapping("info{:$}") fun info(req: HttpServletRequest): Any {
 		val url = req.getQueryString()
 		if (url == null || "".equals(url))
 			return mapOf("error" to Error("请提供一个Youtube视频URL"))
@@ -34,7 +97,7 @@ class YoutubeCtrl {
 		val matchResult = regex.matchEntire(url)
 		if (matchResult == null) return mapOf("error" to Error("请提供正确的Youtube视频URL"))
 //		val (host, id) = matchResult.destructured
-		val id: String = matchResult.groups.get(2)?.component1() ?: ""
+		val id: String = matchResult.groups.get(2)?.value ?: ""
 		if (id.length.let{ it > 11 || it < 11}) return mapOf("error" to Error("该Youtube视频ID长度不等于11"))
 		val finalUrl = "https://www.youtube.com/watch?v=$id"
 
@@ -42,9 +105,9 @@ class YoutubeCtrl {
 		shell.ready()
 		
 		// 提供可用格式
-		if ("info".equals(opt)) try {
+		try {
 			val cmd = "youtube-dl -F '$finalUrl' 2> /dev/null" // 请注意这里可能会被注入代码, 正则 [\w-]+ 加以限制
-			var output = shell.run(cmd, 8000, 2000) ?: throw RuntimeException("execute cmd failed")
+			var output = shell.run(cmd, 8000, 2000) ?: "" //throw RuntimeException("execute cmd failed")
 			if (shell.run("echo -n $?").let{ it == null || !"0".equals(it) })
 				output = """[youtube] sbz3fOe7rog: Downloading webpage
 [youtube] sbz3fOe7rog: Downloading video info webpage
@@ -101,7 +164,6 @@ format code  extension  resolution note
 							continue
 						}
 			}
-			
 		
 			return mapOf(
 				"v" to id,
@@ -118,10 +180,7 @@ format code  extension  resolution note
 			)
 		} catch(e: Throwable) {
 			e.printStackTrace()
-			return "500"
+			return mapOf("error" to Error("${ e.message }"))
 		} finally { if (shell.isAlive()) shell.run("exit", 0, 0) }
-
-		// 下载 $finalUrl
-		return "下载 $finalUrl"
 	}
 }

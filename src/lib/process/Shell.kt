@@ -75,4 +75,10 @@ class Shell(val shell: String = "bash") {
 	fun isAlive(): Boolean {
 		return "SHELL".equals(run("echo -n 'SHELL'"))
 	}
+	
+	/** 获取上一个命令退出码 */
+	fun lastCode(): Int = try { run("echo -n $?", 100, 0)?.toInt() ?: -1 } catch (e: Throwable){ -1 }
+	
+	/** 发送 exit 指令 */
+	fun exit() = try { run("exit") } catch(e: Throwable) {}
 }
