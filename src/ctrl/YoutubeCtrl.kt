@@ -45,16 +45,23 @@ class YoutubeCtrl {
 		var result = mapDownloading.get(request)
 
 		if (result == null) { // 请求未在下载队列中, 先查看是否已存在目标, 再决定是否下载
+			val path = "youtube-dl/${ v }/${ format }/${ v }"
 			global.log("$request 未在队列, 查看目标")
 			shell.ready()
-			var cmd = """cd '${ baseDir }' && \ls youtube-dl/${ format }/${ v }.${ if (recode2 == null) "*" else recode2 }""" // 如果没有指定 recode 参数, 那么匹配任意一个格式的资源
+			var cmd = """cd '${ baseDir }' && \ls ${ path }.${ if (recode2 == null) "*" else recode2 }""" // 如果没有指定 recode 参数, 那么匹配任意一个格式的资源, 可能匹配到下载参数"-k"保留的单文件
 			global.log(cmd)
 			val dest = shell.run(cmd)
 			if ("0".equals(shell.run("echo -n $? && cd ..")) ) {
 				global.log("查找到文件 $dest")
-				shell.exit()
-				result = DownloadResult(false, true, dest ?: "Error")
+				var filename = ""
+				// 由于可能存在多个匹配的结果
+				for (line in dest!!.split('\n')) {
+					if (line.matches("""${ path }\.[\w]+""".toRegex()) )
+						filename = line.trim()
+				}
+				result = DownloadResult(false, true, filename, "${ path }.info.json")
 				mapDownloading.put(request, result)
+				shell.exit()
 				return mapOf("status" to result)
 			}
 			global.log("未找到目标, 开始下载$request")
@@ -63,7 +70,6 @@ class YoutubeCtrl {
 			mapDownloading.put(request, result)
 //			cmd = """youtube-dl 'https://www.youtube.com/watch?v=${ v }' -f ${ format2 } -o '${ baseDir }/youtube-dl/${ format }/%(title)s.full.%(ext)s' ${ if (recode2 != null) "--recode $recode2" else "" } -k"""
 			// 使用默认文件名是不明智的, 用视频ID作为文件名吧, 同时拉取元数据JSON
-			val path = "youtube-dl/${ format }/{ v }"
 			cmd = """youtube-dl 'https://www.youtube.com/watch?v=${ v }' -f ${ format2 } -o '${ baseDir }/${ path }.%(ext)s' ${ if (recode2 != null) "--recode $recode2" else "" } -k --write-info-json"""
 			global.log("$cmd", "执行下载")
 
@@ -75,13 +81,13 @@ class YoutubeCtrl {
 					global.log(r, "下载完成")
 					// 文件下载为?
 					var filename = "Unknown path"
-					val regex = """(${ path }.${ v }\.[\w]+)""".toRegex()
+					val regex = """(${ path }\.[\w]+)""".toRegex()
 					for (line in r!!.split('\n')) {
 						val mr = regex.matchEntire(line)
 						if (mr != null)
 							filename = mr.groups.get(1)?.value ?: filename
 					}
-					mapDownloading.set(request, DownloadResult(false, true, "$filename", "${ path }/${ v }.info.json"))
+					mapDownloading.set(request, DownloadResult(false, true, "$filename", "${ path }.info.json"))
 				} else {
 					global.log(r, "下载失败")
 					mapDownloading.set(request, DownloadResult(false, false, "下载失败"))
@@ -90,9 +96,7 @@ class YoutubeCtrl {
 			}.start()
 		}
 		
-//		if (result.downloading) return mapOf("status" to result)
-//		if (!result.downloading && result.downloadSucceed) return mapOf("status" to result)
-
+		// 轮询 result, 它由下载线程更新
 		return mapOf("status" to result)
 	}
 
