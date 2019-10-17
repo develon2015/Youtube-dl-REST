@@ -19,7 +19,7 @@ class YoutubeCtrl {
 	data class Video(val id: Int = 0, val format: String = "未知视频", val scale: String = "", val frame: Int = 0, val rate: Int = 0, val info: String = "?", val size: Double = 0.0)
 	
 	data class DownloadRequest(val v: String = "", val format: String = "", val recode: String? = null)
-	data class DownloadResult(var downloading: Boolean = true, var downloadSucceed: Boolean = false, var dest: String = "")
+	data class DownloadResult(var downloading: Boolean = true, var downloadSucceed: Boolean = false, var dest: String = "", var metadata: String = "")
 	val mapDownloading = HashMap<DownloadRequest, DownloadResult>()
 	
 	val baseDir = "./webapps"
@@ -63,7 +63,8 @@ class YoutubeCtrl {
 			mapDownloading.put(request, result)
 //			cmd = """youtube-dl 'https://www.youtube.com/watch?v=${ v }' -f ${ format2 } -o '${ baseDir }/youtube-dl/${ format }/%(title)s.full.%(ext)s' ${ if (recode2 != null) "--recode $recode2" else "" } -k"""
 			// 使用默认文件名是不明智的, 用视频ID作为文件名吧, 同时拉取元数据JSON
-			cmd = """youtube-dl 'https://www.youtube.com/watch?v=${ v }' -f ${ format2 } -o '${ baseDir }/youtube-dl/${ format }/${ v }.%(ext)s' ${ if (recode2 != null) "--recode $recode2" else "" } -k --write-info-json"""
+			val path = "youtube-dl/${ format }/{ v }"
+			cmd = """youtube-dl 'https://www.youtube.com/watch?v=${ v }' -f ${ format2 } -o '${ baseDir }/${ path }.%(ext)s' ${ if (recode2 != null) "--recode $recode2" else "" } -k --write-info-json"""
 			global.log("$cmd", "执行下载")
 
 			Thread{
@@ -72,11 +73,19 @@ class YoutubeCtrl {
 				if (shell.lastCode() == 0) {
 					// 下载完成
 					global.log(r, "下载完成")
-					result.downloading = false
-					result.downloadSucceed = true
-					result.dest = "$r"
-				} else
+					// 文件下载为?
+					var filename = "Unknown path"
+					val regex = """(${ path }.${ v }\.[\w]+)""".toRegex()
+					for (line in r!!.split('\n')) {
+						val mr = regex.matchEntire(line)
+						if (mr != null)
+							filename = mr.groups.get(1)?.value ?: filename
+					}
+					mapDownloading.set(request, DownloadResult(false, true, "$filename", "${ path }/${ v }.info.json"))
+				} else {
 					global.log(r, "下载失败")
+					mapDownloading.set(request, DownloadResult(false, false, "下载失败"))
+				}
 				shell.exit()
 			}.start()
 		}
