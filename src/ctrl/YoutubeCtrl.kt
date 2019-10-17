@@ -96,6 +96,11 @@ class YoutubeCtrl {
 							err = it
 					}
 					mapDownloading.set(request, DownloadResult(false, false, "下载失败", err))
+					// 下载失败可能是转码失败, 这时仍然会产生一个空文件, 删除它
+					"rm '${ path }.${ recode2 }'".let{
+						global.log(it, "转码失败, 删除空文件")
+						shell.run(it)
+					}
 				}
 				shell.exit()
 			}.start()
