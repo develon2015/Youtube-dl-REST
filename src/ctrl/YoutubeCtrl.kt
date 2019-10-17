@@ -81,7 +81,7 @@ class YoutubeCtrl {
 					global.log(r, "下载完成")
 					// 文件下载为?
 					var filename = "Unknown path"
-					val regex = """(${ path }\.[\w]+)""".toRegex()
+					val regex = """.*(${ path }\.[\w]+).*""".toRegex()
 					for (line in r!!.split('\n')) {
 						val mr = regex.matchEntire(line)
 						if (mr != null)
