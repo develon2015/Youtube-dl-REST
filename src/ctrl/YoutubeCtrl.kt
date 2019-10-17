@@ -43,9 +43,9 @@ class YoutubeCtrl {
 		
 		// 提供可用格式
 		if ("info".equals(opt)) try {
-			val cmd = "youtube-dl -F '$finalUrl'" // 请注意这里可能会被注入代码, 正则 [\w-]+ 加以限制
+			val cmd = "youtube-dl -F '$finalUrl' 2> /dev/null" // 请注意这里可能会被注入代码, 正则 [\w-]+ 加以限制
 			var output = shell.run(cmd, 8000, 2000) ?: throw RuntimeException("execute cmd failed")
-			if (true)
+			if (shell.run("echo -n $?").let{ it == null || !"0".equals(it) })
 				output = """[youtube] sbz3fOe7rog: Downloading webpage
 [youtube] sbz3fOe7rog: Downloading video info webpage
 [info] Available formats for sbz3fOe7rog:
@@ -104,6 +104,8 @@ format code  extension  resolution note
 			
 		
 			return mapOf(
+				"v" to id,
+
 				"best"  to mapOf(
 					"audio" to listAudio.maxBy{ it.rate },
 					"video" to listVideo.maxBy{ it.rate }
