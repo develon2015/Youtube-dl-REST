@@ -14,7 +14,7 @@ import java.util.LinkedList
 @RestController
 @RequestMapping("/youtube")
 class YoutubeCtrl {
-	data class Error(val info: String = "Unknown error", val code: Int = 404)
+	data class Error(val error: String = "Unknown error", val success: Boolean = false)
 	data class Audio(val id: Int = 0, val format: String = "未知音频", val rate: Int = 0, val info: String = "?", val size: Double = 0.0)
 	data class Video(val id: Int = 0, val format: String = "未知视频", val scale: String = "", val frame: Int = 0, val rate: Int = 0, val info: String = "?", val size: Double = 0.0)
 	
@@ -31,8 +31,8 @@ class YoutubeCtrl {
 		@RequestParam format: String,
 		@RequestParam(required = false) recode: String?): Any {
 
-		if (!v.matches("[\\w-]{11}".toRegex()) ) return mapOf( "error" to Error("Video ID不正确"))
-		if (!format.matches("""(\d+|\d+x\d+)""".toRegex()) ) return mapOf("error" to Error("请求的音频和视频ID必须是数字, 合并格式为'视频IDx音频ID"))
+		if (!v.matches("[\\w-]{11}".toRegex()) ) return Error("Video ID不正确")
+		if (!format.matches("""(\d+|\d+x\d+)""".toRegex()) ) return Error("请求的音频和视频ID必须是数字, 合并格式为'视频IDx音频ID")
 
 		val format2 = format.replace("x", "+")
 		// 过滤recode
@@ -62,7 +62,7 @@ class YoutubeCtrl {
 				result = DownloadResult(false, true, filename, "${ path }.info.json")
 				mapDownloading.put(request, result)
 				shell.exit()
-				return mapOf("status" to result)
+				return mapOf("success" to true, "result" to result)
 			}
 			global.log("未找到目标, 开始下载$request")
 			// 启动下载, 加入队列
@@ -107,14 +107,14 @@ class YoutubeCtrl {
 		}
 		
 		// 轮询 result, 它由下载线程更新
-		return mapOf("status" to result)
+		return mapOf("success" to true, "result" to result)
 	}
 
 	// API: info?url
 	@GetMapping("info{:$}") fun info(req: HttpServletRequest): Any {
 		val url = req.getQueryString()
 		if (url == null || "".equals(url))
-			return mapOf("error" to Error("请提供一个Youtube视频URL"))
+			return Error("请提供一个Youtube视频URL")
 
 		/**
 		 合格的单个视频URL格式如下:
@@ -126,10 +126,10 @@ class YoutubeCtrl {
 		val regex = """https?://(youtu.be/|www.youtube.com/watch\?v=)([\w-]+)""".toRegex()
 		global.log("$url", "url")
 		val matchResult = regex.matchEntire(url)
-		if (matchResult == null) return mapOf("error" to Error("请提供正确的Youtube视频URL"))
+		if (matchResult == null) return Error("请提供正确的Youtube视频URL")
 //		val (host, id) = matchResult.destructured
 		val id: String = matchResult.groups.get(2)?.value ?: ""
-		if (id.length.let{ it > 11 || it < 11}) return mapOf("error" to Error("该Youtube视频ID长度不等于11"))
+		if (id.length.let{ it > 11 || it < 11}) return Error("该Youtube视频ID长度不等于11")
 		val finalUrl = "https://www.youtube.com/watch?v=$id"
 
 		val shell = Shell()
@@ -196,7 +196,7 @@ format code  extension  resolution note
 						}
 			}
 		
-			return mapOf(
+			return mapOf("success" to true, "reslut" to mapOf(
 				"v" to id,
 
 				"best"  to mapOf(
@@ -208,10 +208,10 @@ format code  extension  resolution note
 					"audios" to listAudio,
 					"videos" to listVideo
 				)
-			)
+			))
 		} catch(e: Throwable) {
 			e.printStackTrace()
-			return mapOf("error" to Error("${ e.message }"))
+			return Error("${ e.message }")
 		} finally { if (shell.isAlive()) shell.run("exit", 0, 0) }
 	}
 }
