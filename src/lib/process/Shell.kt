@@ -1,11 +1,7 @@
 package lib.process
 
-//import global
-import Global
 import java.nio.charset.Charset
 import java.io.InputStream
-
-private val global = Global(log = false)
 
 /**
  * 通过 shell 进行基本的进程间通信
@@ -21,7 +17,8 @@ class Shell(val shell: String = "bash") {
 
 	/**
 	 * 写入命令, 获取输出<br>
-	 * 在此之前可以调用 this#isAlive() 测试可用性
+	 * 在此之前可以调用 this#isAlive() 测试可用性<br>
+	 * null 值代表超时
 	 */
 	fun run(cmd: String, timeout: Long = 1000, loopWaitTime: Long = 100): String? {
 		var result = ""
@@ -31,30 +28,24 @@ class Shell(val shell: String = "bash") {
 		val errs = process.getErrorStream()
 		
 		while (ins.available() > 0 || errs.available() > 0) {
-			global.log("错误的字节 ${ ins.available() } ${ errs.available() }")
 			ins.available().toLong().let{ if (it > 0) ins.skip(it) }
 			errs.available().toLong().let{ if (it > 0) errs.skip(it) }
 			Thread.sleep(1)
+			if (System.currentTimeMillis() - startTime > timeout) return null // time out
 		}
 		outs.write("${ cmd }\n".toByteArray())
 		outs.flush()
-		global.log("wait")
 		while (ins.available() == 0 && errs.available() == 0) {
-			global.log("休眠")
 			Thread.sleep(20)
 			if (System.currentTimeMillis() - startTime > timeout) return null // time out
 		}
-		global.log("OK")
-		global.log("ins : ${ ins.available() } errs : ${ errs.available() }")
 		while (true) {
 			// read
 			val output: InputStream = if (ins.available() > 0) ins else errs
 			val n = output.available()
 			if (n < 1) {
-				global.log("管道终结 $n")
 				return result
 			}
-			global.log("可用 $n 字节")
 			val tmp = ByteArray(n)
 			output.read(tmp).toString()
 			result += String(tmp, Charset.defaultCharset())
@@ -67,18 +58,17 @@ class Shell(val shell: String = "bash") {
 	/** 启动 shell 进程 */
 	fun ready() {
 		process = Runtime.getRuntime().exec(shell)
-		val id = run("echo -n $$", 2000, 100)
-		global.log("启动 ${ shell }, PID: ${ id }")
+		pid = run("echo -n $$", 2000, 100).let{ if (it != null) it.toInt() else 0 }
 	}
 	
 	/** 测试 Shell 可用性 */
-	fun isAlive(): Boolean {
-		return "SHELL".equals(run("echo -n 'SHELL'"))
+	fun isAlive(): Boolean = try { "SHELL".equals(run("echo -n 'SHELL'")) } catch(e: Throwable) { false }
+	
+	/** 获取上一个命令退出码, 毋使惊异常(-1) */
+	fun lastCode(): Int = try { run("echo -n $?", 100, 0)?.toInt() ?: -1 } catch(e: Throwable) { -1 }
+	
+	/** 发送 exit 指令, 毋使惊异常 */
+	fun exit() {
+		try { run("exit") } catch(e: Throwable) {}
 	}
-	
-	/** 获取上一个命令退出码 */
-	fun lastCode(): Int = try { run("echo -n $?", 100, 0)?.toInt() ?: -1 } catch (e: Throwable){ -1 }
-	
-	/** 发送 exit 指令 */
-	fun exit() = try { run("exit") } catch(e: Throwable) {}
 }
