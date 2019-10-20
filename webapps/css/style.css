@@ -1,0 +1,38 @@
+* {
+    font-family: 'Microsoft JhengHei';
+}
+
+html, body {
+    height: 50%;
+    width: 100%;
+    padding: 0px;
+    margin: 0px;
+}
+
+div {
+    padding: 0px;
+    margin: 0px;
+}
+
+*.title {
+    font-size: 20pt;
+    padding: 20px 20px;
+    background-color: pink;
+    font-weight: bold;
+}
+
+div#divFooter {
+    text-align: center;
+    background-color: #ccc;
+    padding: 20px 0px;
+}
+
+a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:hover {
+    color: green;
+}
