@@ -19,7 +19,7 @@ class YoutubeCtrl {
 	data class Video(val id: Int = 0, val format: String = "未知视频", val scale: String = "", val frame: Int = 0, val rate: Int = 0, val info: String = "?", val size: Double = 0.0)
 	
 	data class DownloadRequest(val v: String = "", val format: String = "", val recode: String? = null)
-	data class DownloadResult(var downloading: Boolean = true, var downloadSucceed: Boolean = false, var dest: String = "", var metadata: String = "")
+	data class DownloadResult(val v: String = "", var downloading: Boolean = true, var downloadSucceed: Boolean = false, var dest: String = "", var metadata: String = "")
 	val mapDownloading = HashMap<DownloadRequest, DownloadResult>()
 	
 	val baseDir = "./webapps"
@@ -27,12 +27,12 @@ class YoutubeCtrl {
 	// API: download?v=\w{11}&format=\d+x\d+&recode=\w+
 	// 如有必要，将视频编码为另一种格式(目前支持:mp4|flv|ogg|webm|mkv|avi)
 	@GetMapping("download{:$}") fun download(
-		@RequestParam v: String,
-		@RequestParam format: String,
+		@RequestParam(required = false) v: String?,
+		@RequestParam(required = false) format: String?,
 		@RequestParam(required = false) recode: String?): Any {
 
-		if (!v.matches("[\\w-]{11}".toRegex()) ) return Error("Video ID不正确")
-		if (!format.matches("""(\d+|\d+x\d+)""".toRegex()) ) return Error("请求的音频和视频ID必须是数字, 合并格式为'视频IDx音频ID")
+		if (v == null || !v.matches("[\\w-]{11}".toRegex()) ) return Error("Qurey参数v错误: 请提供一个正确的Video ID")
+		if (format == null || !format.matches("""(\d+|\d+x\d+)""".toRegex()) ) return Error("Query参数format错误: 请求的音频和视频ID必须是数字, 合并格式为'视频IDx音频ID'")
 
 		val format2 = format.replace("x", "+")
 		// 过滤recode
@@ -59,14 +59,14 @@ class YoutubeCtrl {
 					if (line.matches("""${ path }\.[\w]+""".toRegex()) )
 						filename = line.trim()
 				}
-				result = DownloadResult(false, true, filename, "${ path }.info.json")
+				result = DownloadResult(v, false, true, filename, "${ path }.info.json")
 				mapDownloading.put(request, result)
 				shell.exit()
 				return mapOf("success" to true, "result" to result)
 			}
 			global.log("未找到目标, 开始下载$request")
 			// 启动下载, 加入队列
-			result = DownloadResult()
+			result = DownloadResult(v = v, dest = "正在下载中")
 			mapDownloading.put(request, result)
 //			cmd = """youtube-dl 'https://www.youtube.com/watch?v=${ v }' -f ${ format2 } -o '${ baseDir }/youtube-dl/${ format }/%(title)s.full.%(ext)s' ${ if (recode2 != null) "--recode $recode2" else "" } -k"""
 			// 使用默认文件名是不明智的, 用视频ID作为文件名吧, 同时拉取元数据JSON
@@ -87,18 +87,18 @@ class YoutubeCtrl {
 						if (mr != null)
 							filename = mr.groups.get(1)?.value ?: filename
 					}
-					mapDownloading.set(request, DownloadResult(false, true, "$filename", "${ path }.info.json"))
+					mapDownloading.set(request, DownloadResult(v, false, true, "$filename", "${ path }.info.json"))
 				} else {
 					global.log(r, "下载失败")
-					var err = ""
+					var err: String? = null
 					r?.split('\n')?.forEach{
 						if (it.matches("ERROR.*".toRegex()) )
 							err = it
 					}
-					mapDownloading.set(request, DownloadResult(false, false, "下载失败", err))
+					mapDownloading.set(request, DownloadResult(v, false, false, "下载失败", err ?: "未知的错误"))
 					// 下载失败可能是转码失败, 这时仍然会产生一个空文件, 删除它
 					"rm '${ path }.${ recode2 }'".let{
-						global.log(it, "转码失败, 删除空文件")
+						global.log(it, "转码失败, 删除可能的空文件")
 						shell.run(it)
 					}
 				}
@@ -110,8 +110,8 @@ class YoutubeCtrl {
 		return mapOf("success" to true, "result" to result)
 	}
 
-	// API: info?url
-	@GetMapping("info{:$}") fun info(req: HttpServletRequest): Any {
+	// API: parse?url
+	@GetMapping("parse{:$}") fun info(req: HttpServletRequest): Any {
 		val url = req.getQueryString()
 		if (url == null || "".equals(url))
 			return Error("请提供一个Youtube视频URL")
