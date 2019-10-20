@@ -1,7 +1,7 @@
 API
 ===
 
-* /youtube/parse ? { url:https?://(youtu.be/|www.youtube.com/watch\?v=)([\w-]{11}) }
+* `/youtube/parse ? { url:https?://(youtu.be/|www.youtube.com/watch\?v=)([\w-]{11}) }`
 
 > 解析可用格式
 
@@ -120,8 +120,10 @@ API
 }
 ```
 
-* /youtube/download ? v={ videoID:[\w-]{11} } & format={ id:(\d+|\d+x\d+) }
-* /youtube/download ? v={ videoID:[\w-]{11} } & format={ id:(\d+|\d+x\d+) } & recode=[ "mp4", "flv", "webm", "mkv", "avi" ]
+<hr>
+
+* `/youtube/download ? v={ videoID:[\w-]{11} } & format={ id:(\d+|\d+x\d+) }`
+* `/youtube/download ? v={ videoID:[\w-]{11} } & format={ id:(\d+|\d+x\d+) } & recode=[ "mp4", "flv", "webm", "mkv", "avi" ]`
 
 > 提交解析任务, 获取下载链接和元数据链接
 
@@ -162,3 +164,6 @@ API
   }
 }
 ```
+
+<hr>
+
