@@ -2,6 +2,8 @@
     font-family: 'Microsoft JhengHei';
 }
 
+.center { text-align: center; }
+
 html, body {
     height: 50%;
     width: 100%;
@@ -30,9 +32,19 @@ div#divFooter {
 a {
     color: white;
     text-decoration: none;
+    text-decoration: underline;
     font-weight: bold;
 }
 
 a:hover {
     color: green;
+}
+
+input {
+    width: 60%;
+    height: 30px;
+    border: none;
+    outline: none;
+    border-bottom: 2px solid red;
+    font-size: 14px;
 }

@@ -26,7 +26,7 @@
                 mainHTML:
                     '<div id="divMain"></div>',
                 footerHTML:
-                    '<div id="divFooter"><a href="https://github.com/develon2015/Youtube-dl-REST">Design by Develon</a><br>' + Develon.getNowTime() + "<br>" + '</div>',
+                    '<div id="divFooter"><a href="https://github.com/develon2015/Youtube-dl-REST">Designed by Develon</a><br>' + Develon.getNowTime() + "<br>" + '</div>',
             }
 
             ui.createDivMain = function () {
@@ -38,8 +38,8 @@
                 // then, create a div element "divFooter" by jQuery selector quickly
                 $(this.values.footerHTML).appendTo(document.body)
                 var mainHeight = window.innerHeight
-                // If you want see footer
-                mainHeight -= $('#divFooter')[0].offsetHeight + 0 // 0 is height beetwen divMain and divFooter(padding plus margin)
+                // If you want to see footer
+                mainHeight -= $('#divFooter')[0].offsetHeight + 0 // 0 is a Correction value between divMain and divFooter(padding plus margin)
                 $('#divMain').css('min-height', mainHeight + 'px')
             }
 
@@ -47,7 +47,7 @@
                 $(this.values.viewportHTML).appendTo(document.head)
             }
 
-            ui.setTitle = fun => {
+            ui.setDefaultTitle = fun => {
                 if ($('title')[0] === undefined) {
                     $('<title>' + fun + '</title>').appendTo($('head'))
                 }
@@ -70,31 +70,76 @@
 
         },
 
-        notify: (msg, callback) =>{
-            $('<div id="notify" style="position: fixed; top: 0px; left: 0px; right: 0px; bottom: 0px; background-color: rgba(0, 0, 0, 0.75); z-index: 999999999;">\
+        removeNotify: id => {
+            $(document.body)[0].removeChild($('div#notify' + id)[0])
+        },
+
+        notifyID: 1,
+        notify: function (msg, callback) {
+            var id = this.notifyID ++
+            $('<div id="notify' + id + '" style="position: fixed; top: 0px; left: 0px; right: 0px; bottom: 0px; background-color: rgba(0, 0, 0, 0.75); z-index: 999999999;">\
                 <div style="width: 270px; max-width: 90%; font-size: 16px; text-align: center; background-color: rgb(255, 255, 255); border-radius: 15px; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);">\
                     <div style="padding: 10px 15px; border-bottom: 1px solid rgb(221, 221, 221);">\
-                        <span id="notifyMsg"></span>\
+                        <span id="notifyMsg' + id + '">' + msg + '</span>\
                     </div>\
-                    <div id="notifyBtn" style="padding: 10px 0px; color: rgb(0, 122, 255); font-weight: 600; cursor: pointer; user-select: none">\
-                        确定\
+                    <div id="notifyBtn' + id + '" style="padding: 10px 0px; color: rgb(0, 122, 255); font-weight: 600; cursor: pointer; user-select: none">\
+                        <span>确定</span>\
                     </div>\
                 </div>\
             </div>').appendTo(document.body)
-            $('span#notifyMsg')[0].innerText = msg
-            $('div#notifyBtn').click(fun =>{
-                $(document.body)[0].removeChild($('div#notify')[0])
-                if (typeof callback === 'function') callback()
+            $('span#notifyMsg' + id).html(msg)
+            $('div#notifyBtn' + id).click(fun =>{
+                var exClose
+                if (typeof callback === 'function') exClose = callback() // callback决定是否关闭通知框
+                if (exClose == null) exClose = true // 默认可关闭
+                if (exClose)
+                    $(document.body)[0].removeChild($('div#notify' + id)[0])
             })
+            // 失控的Enter键
+            try { $(':focus')[0].blur() } catch(e) { }
+            return id
         },
 
+        notifyWait: function (msg, callback) {
+            var id = this.notifyID ++
+            $('<div id="notify' + id + '" style="position: fixed; top: 0px; left: 0px; right: 0px; bottom: 0px; background-color: rgba(0, 0, 0, 0.75); z-index: 999999999;">\
+                <div style="width: 270px; max-width: 90%; font-size: 16px; text-align: center; background-color: rgb(255, 255, 255); border-radius: 15px; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);">\
+                    <div style="padding: 10px 15px; border-bottom: 1px solid rgb(221, 221, 221);">\
+                        <span id="notifyMsg' + id + '">' + msg + '</span>\
+                    </div>\
+                    <div id="notifyBtn' + id + '" style="padding: 10px 0px; color: rgb(0, 122, 255); font-weight: 600; cursor: pointer; user-select: none">\
+                        <span>取消</span>\
+                    </div>\
+                </div>\
+            </div>').appendTo(document.body)
+            $('div#notifyBtn' + id).click(fun =>{
+                var exClose
+                if (typeof callback === 'function') exClose = callback()
+                if (exClose == null) exClose = true // 默认可关闭
+                if (exClose)
+                    $(document.body)[0].removeChild($('div#notify' + id)[0])
+            })
+            try { $(':focus')[0].blur() } catch(e) { }
+            var point = "......";
+            var nMax = point.length;
+            var n = 0;
+            (function progress() {
+                var spanMsg = $("#notifyMsg" + id)[0]
+                if (spanMsg != null) {
+                    spanMsg.innerHTML = msg + point.substr(0, n)
+                    if (n ++ >= nMax) n = 0
+                    setTimeout(progress, 100)
+                }
+            })()
+            return id
+        },
     }
 })()
 
 $(fun => {
     // configure viewport
     var ui = Develon.getUI()
-    ui.setTitle("Youtube在线解析") // 设置默认标题
+    ui.setDefaultTitle("Youtube在线解析") // 设置默认标题
     ui.setViewport()
     ui.createDivMain()
 })

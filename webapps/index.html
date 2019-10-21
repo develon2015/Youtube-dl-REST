@@ -2,16 +2,63 @@
 <html lang="zh">
 <link rel="stylesheet" href="./css/style.css"/>
 
+<style>
+    #divURL { padding-top: 20px; }
+</style>
+
 <!-- <script src="js/loadbar.js"></script> -->
-<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<!-- <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> -->
+<script src="js/jquery.js"></script>
 <script src="js/libjrt.js"></script>
 <script>
+    parse = fun => {
+        var url = $('input#url')[0].value
+        var id = Develon.notifyID // 获取即将弹出的通知框ID
+        var parseRequest = $.ajax({
+            url: "/youtube/parse?" + url,
+            success: fun => {
+                if (fun.success === false) {
+                    Develon.notify(fun.error)
+                    Develon.removeNotify(id)
+                    return
+                }
+                Develon.notify("解析完成")
+                Develon.removeNotify(id)
+                console.log(fun.result)
+            },
+            error: fun => {
+                if (fun.readyState === 0) {
+                    Develon.notify("已取消请求")
+                    return
+                }
+                Develon.notify("解析失败, 请稍后再试")
+                Develon.removeNotify(id)
+            }
+        })
+        Develon.notifyWait("正在解析, 请稍等", fun => {
+            parseRequest.abort()
+            return true
+        })
+    }
+
     $(fun => {
+        $("input#url")[0].focus()
     })
 </script>
 
 <body>
-    <div class='title'>Youtube在线解析</div>
-    <a>Hello</a>
+    <div class="title">Youtube在线解析</div>
+    <div id="divURL" class="center">
+        <form name="parse" action="javascript: parse()">
+            <input id="url" name="url" type="url" autocomplete="off" placeholder="请在此粘贴要解析的视频URL后回车">
+        </form>
+    </div>
+
+    <div id="divReslut" style="display: none">
+        <h3>解析结果</h3>
+        <table id="result"></table>
+    </div>
+    <div id="log"></div>
 </body>
+
 </html>

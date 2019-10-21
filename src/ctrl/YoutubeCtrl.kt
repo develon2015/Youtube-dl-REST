@@ -196,7 +196,7 @@ format code  extension  resolution note
 						}
 			}
 		
-			return mapOf("success" to true, "reslut" to mapOf(
+			return mapOf("success" to true, "result" to mapOf(
 				"v" to id,
 
 				"best"  to mapOf(
