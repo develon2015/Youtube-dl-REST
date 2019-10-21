@@ -29,10 +29,10 @@ div#divFooter {
     padding: 20px 0px;
 }
 
-a {
+a.white {
     color: white;
     text-decoration: none;
-    text-decoration: underline;
+    text-decoration: underline dotted;
     font-weight: bold;
 }
 
@@ -40,11 +40,29 @@ a:hover {
     color: green;
 }
 
-input {
+input.search {
     width: 60%;
     height: 30px;
     border: none;
     outline: none;
     border-bottom: 2px solid red;
     font-size: 14px;
+}
+
+input.td {
+    width: 60%;
+    font-size: 14px;
+}
+
+div.button {
+    padding: 20px 0px;
+}
+
+*.button {
+    color: #000000;
+    background: #00bf00;
+    padding: 9px 10px;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 6px;
 }

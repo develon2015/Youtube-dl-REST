@@ -4,6 +4,31 @@
 
 <style>
     #divURL { padding-top: 20px; }
+    #divResult { padding-top: 200px; }
+
+    table {
+        margin: auto;
+        border: none;
+    }
+
+    table tr {
+        width: 99%;
+        padding: 0;
+        margin: 0;
+    }
+
+    table th {
+        background-color: #ccc;
+        width: 200px;
+        padding: 0;
+        margin: 0;
+    }
+
+    table td {
+        background-color: aquamarine;
+        padding: 0;
+        margin: 0;
+    }
 </style>
 
 <!-- <script src="js/loadbar.js"></script> -->
@@ -11,6 +36,52 @@
 <script src="js/jquery.js"></script>
 <script src="js/libjrt.js"></script>
 <script>
+    function fill(res) {
+        $("td").remove()
+        var tr = $("tr")
+
+        for (var i = 0; i < tr.length; i ++ ) {
+            if (tr[i].innerText === "")
+                $(tr[i]).remove()
+        }
+
+        for (var i = 0; i < res.available.audios.length; i ++ ) {
+            var r = res.available.audios[i]
+            row = $(`<tr>
+                <td><input class="td" id="audio${ r.id }" value="${ r.id }" name="selectedAudio" type="radio" style="height: 20px"></td>
+                <td><a href="/youtube/download?v=${ res.v }&format=${ r.id }">${ r.id }</a></td>
+                <td>${ r.format }</td>
+                <td>${ r.rate }</td>
+                <td>${ r.size }</td>
+                <td>${ r.info }</td>
+            </tr>`)
+            row.appendTo("table#audios")
+            if (r.id === res.best.audio.id) {
+                $(`#audio${ r.id }`).click()
+            }
+        }
+
+        for (var i = 0; i < res.available.videos.length; i ++ ) {
+            var r = res.available.videos[i]
+            row = $(`<tr>
+                <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="radio" style="height: 20px"></td>
+                <td>${ r.id }</td>
+                <td>${ r.format }</td>
+                <td>${ r.scale }</td>
+                <td>${ r.rate }</td>
+                <td>${ r.size }</td>
+                <td>${ r.info }</td>
+            </tr>`)
+            row.appendTo("table#videos")
+            if (r.id === res.best.video.id) {
+                $(`#video${ r.id }`).click()
+            }
+        }
+
+        // Display
+        $("#divResult").css("display", "contents")
+    }
+
     parse = fun => {
         var url = $('input#url')[0].value
         var id = Develon.notifyID // 获取即将弹出的通知框ID
@@ -22,13 +93,14 @@
                     Develon.removeNotify(id)
                     return
                 }
-                Develon.notify("解析完成")
+                // Develon.notify("解析完成")
                 Develon.removeNotify(id)
-                console.log(fun.result)
+                fill(fun.result)
             },
             error: fun => {
                 if (fun.readyState === 0) {
-                    Develon.notify("已取消请求")
+                    Develon.notify("已取消请求") // 连接被重置时都会导致错误
+                    Develon.removeNotify(id)
                     return
                 }
                 Develon.notify("解析失败, 请稍后再试")
@@ -41,6 +113,10 @@
         })
     }
 
+    function download() {
+        Develon.notify("下载")
+    }
+
     $(fun => {
         $("input#url")[0].focus()
     })
@@ -50,14 +126,43 @@
     <div class="title">Youtube在线解析</div>
     <div id="divURL" class="center">
         <form name="parse" action="javascript: parse()">
-            <input id="url" name="url" type="url" autocomplete="off" placeholder="请在此粘贴要解析的视频URL后回车">
+            <input class="search" id="url" name="url" type="url" autocomplete="off" placeholder="请在此粘贴要解析的视频URL后回车">
         </form>
     </div>
 
-    <div id="divReslut" style="display: none">
-        <h3>解析结果</h3>
-        <table id="result"></table>
+    <div id="divResult" class="center" style="display: none">
+
+        <div>可用音频</div>
+        <table id="audios">
+            <tr>
+                <th>选中</td>
+                <th>ID</th>
+                <th>编码格式</th>
+                <th>码率(kpbs)</th>
+                <th>大小(MB)</th>
+                <th style="display: none;"></th>
+                <th colspan="2">其它</th>
+            </tr>
+        </table>
+
+        <div>可用视频</div>
+        <table id="videos">
+            <tr>
+                <th>选中</td>
+                <th>ID</th>
+                <th>编码格式</th>
+                <th>分辨率</th>
+                <th>码率(kpbs)</th>
+                <th>大小(MB)</th>
+                <th colspan="2">其它</th>
+            </tr>
+        </table>
+
+        <div style="padding: 20px 0px">
+            <span class="button" onclick="download()">合并 / 下载</span>
+        </div>
     </div>
+
     <div id="log"></div>
 </body>
 
