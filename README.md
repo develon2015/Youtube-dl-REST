@@ -1,3 +1,15 @@
+依赖
+---
+
+* [youtube-dl](https://github.com/ytdl-org/youtube-dl)
+* [FFmpeg](https://github.com/FFmpeg/FFmpeg)
+* [SpringDependent](https://github.com/develon2015/SpringDependent)
+
+演示
+---
+
+![](https://github.com/develon2015/Youtube-dl-REST/raw/master/image.png)
+
 API
 ===
 
@@ -161,6 +173,18 @@ API
     "downloadSucceed" : false,
     "dest" : "下载失败",
     "metadata" : "未知的错误"
+  }
+}
+
+/youtube/download?v=zhGnuWwpNxI&format=137x251
+{
+  "success" : true,
+  "result" : {
+    "v" : "zhGnuWwpNxI",
+    "downloading" : false,
+    "downloadSucceed" : true,
+    "dest" : "youtube-dl/zhGnuWwpNxI/137x251/zhGnuWwpNxI.mkv",
+    "metadata" : "youtube-dl/zhGnuWwpNxI/137x251/zhGnuWwpNxI.info.json"
   }
 }
 ```

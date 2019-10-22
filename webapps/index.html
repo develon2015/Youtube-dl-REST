@@ -175,7 +175,7 @@
                 if (!fun.result.downloading && fun.result.downloadSucceed) {
                     Develon.removeNotify(notifyID)
                     Develon.confirm(`合并完成, 点击确定下载`, fun2 => {
-                        window.location.href = `/${ fun.result.dest }`
+                        window.open(`/${ fun.result.dest }`)
                         return false;
                     })
                     return
