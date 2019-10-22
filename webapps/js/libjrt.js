@@ -120,19 +120,51 @@
                     $(document.body)[0].removeChild($('div#notify' + id)[0])
             })
             try { $(':focus')[0].blur() } catch(e) { }
-            var point = "......";
+            var point = "<-<--<---<----<-----";
             var nMax = point.length;
             var n = 0;
             (function progress() {
                 var spanMsg = $("#notifyMsg" + id)[0]
                 if (spanMsg != null) {
-                    spanMsg.innerHTML = msg + point.substr(0, n)
-                    if (n ++ >= nMax) n = 0
-                    setTimeout(progress, 100)
+                    spanMsg.innerHTML = `${ msg }<br>${ point.substr(0, n) }`
+                    if (n ++ >= nMax) n = 1
+                    setTimeout(progress, 20)
                 }
             })()
             return id
         },
+
+        confirm: function (msg, callbackYes, callbackNo) {
+            var id = this.notifyID ++
+            $('<div id="notify' + id + '" style="position: fixed; top: 0px; left: 0px; right: 0px; bottom: 0px; background-color: rgba(0, 0, 0, 0.75); z-index: 999999999;">\
+                <div style="width: 270px; max-width: 90%; font-size: 16px; text-align: center; background-color: rgb(255, 255, 255); border-radius: 15px; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);">\
+                    <div style="padding: 10px 15px; border-bottom: 1px solid rgb(221, 221, 221);">\
+                        <span id="notifyMsg' + id + '">' + msg + '</span>\
+                    </div>\
+                    <div id="notifyBtn' + id + '" style="padding: 10px 0px; color: rgb(0, 122, 255); font-weight: 600; cursor: pointer; user-select: none">\
+                        <span id="yes" style="padding-right: 40px">确定</span>\
+                        <span id="no" style="padding-left: 40px">取消</span>\
+                    </div>\
+                </div>\
+            </div>').appendTo(document.body)
+            $(`div#notifyBtn${ id } span#yes`).click(fun =>{
+                var exClose
+                if (typeof callbackYes === 'function') exClose = callbackYes()
+                if (exClose !== false) exClose = true // 默认可关闭
+                if (exClose)
+                    $(document.body)[0].removeChild($('div#notify' + id)[0])
+            })
+            $(`div#notifyBtn${ id } span#no`).click(fun =>{
+                var exClose
+                if (typeof callbackNo === 'function') exClose = callbackNo()
+                if (exClose !== false) exClose = true // 默认可关闭
+                if (exClose)
+                    $(document.body)[0].removeChild($('div#notify' + id)[0])
+            })
+            try { $(':focus')[0].blur() } catch(e) { }
+            return id
+        },
+
     }
 })()
 

@@ -36,6 +36,7 @@
 <script src="js/jquery.js"></script>
 <script src="js/libjrt.js"></script>
 <script>
+    // AJAX完成, 填充表单
     function fill(res) {
         $("td").remove()
         var tr = $("tr")
@@ -49,7 +50,7 @@
             var r = res.available.audios[i]
             row = $(`<tr>
                 <td><input class="td" id="audio${ r.id }" value="${ r.id }" name="selectedAudio" type="radio" style="height: 20px"></td>
-                <td><a href="/youtube/download?v=${ res.v }&format=${ r.id }">${ r.id }</a></td>
+                <td><a href="javascript: void(0)" onclick="window.download('/youtube/download?v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
                 <td>${ r.format }</td>
                 <td>${ r.rate }</td>
                 <td>${ r.size }</td>
@@ -65,7 +66,7 @@
             var r = res.available.videos[i]
             row = $(`<tr>
                 <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="radio" style="height: 20px"></td>
-                <td>${ r.id }</td>
+                <td><a href="javascript: void(0)" onclick="window.download('/youtube/download?v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
                 <td>${ r.format }</td>
                 <td>${ r.scale }</td>
                 <td>${ r.rate }</td>
@@ -80,6 +81,10 @@
 
         // Display
         $("#divResult").css("display", "contents")
+
+        $("span#recode").bind("click", fun => {
+            download(null, `/youtube/download?v=${ res.v }')`) // got v, select a, v format & recode ($("table input:checked"))
+        })
     }
 
     parse = fun => {
@@ -113,8 +118,55 @@
         })
     }
 
-    function download() {
-        Develon.notify("下载")
+    function download(uri, recode_uri) {
+        if (typeof uri !== "string") {
+            var listFormat = ["mp4", "mkv", "flv", "avi", "webm", "auto"]
+            var tmpHTML = ""
+            for (var i = 0; i < listFormat.length; i++) {
+                tmpHTML += `<tr onclick="javascript: $('#format_${ listFormat[i] }').prop('checked', true)">
+                    <td style="background-color: white"><input checked="checked" id="format_${ listFormat[i] }" type="radio" name="recode" value="${ listFormat[i] }"></td>
+                    <td style="background-color: white; font-weight: bold; cursor: pointer">${ listFormat[i] }</td></tr>`
+            }
+            Develon.confirm(`<span>选择要合并的格式</span><br>
+                <table id="" style="margin: auto; background-color: white">
+                    ${ tmpHTML }
+                </table>`, fun => {
+                    var inputs = $("table input:checked")
+                    var vid = null
+                    var aid = null
+                    var recode = "auto"
+                    for (var i = 0; i < inputs.length; i ++ ) {
+                        if (inputs[i].name === "selectedVideo") vid = inputs[i].value
+                        if (inputs[i].name === "selectedVideo") aid = inputs[i].value
+                        if (inputs[i].name === "recode") recode = inputs[i].value
+                    }
+                    uri = recode_uri + `&format=${ vid }x${ aid }`
+                    if (recode !== "auto") uri += `&recode=${ recode }`
+                    console.log(`正在请求${ uri }`)
+                    postDownload(uri)
+            })
+            return
+        }
+        Develon.confirm("确认只下载音频或无声视频吗?", fun => {
+            console.log(`正在请求${uri}`)
+            postDownload(uri)
+            return true
+        })
+    }
+
+    function postDownload(uri) {
+        var notifyID = Develon.notifyID
+        var req = $.ajax({
+            url: uri,
+            success: fun => {
+                console.log(fun)
+                Develon.notify(fun.success)
+            },
+            error: fun => {
+                if (fun.readyState === 0) Develon.notify("取消")
+            },
+        })
+        Develon.notifyWait(`稍等`, req.abort())
     }
 
     $(fun => {
@@ -159,7 +211,7 @@
         </table>
 
         <div style="padding: 20px 0px">
-            <span class="button" onclick="download()">合并 / 下载</span>
+            <span id="recode" class="button">合并 / 下载</span>
         </div>
     </div>
 
