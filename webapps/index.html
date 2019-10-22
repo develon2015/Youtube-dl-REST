@@ -83,7 +83,7 @@
         $("#divResult").css("display", "contents")
 
         $("span#recode").bind("click", fun => {
-            download(null, `/youtube/download?v=${ res.v }')`) // got v, select a, v format & recode ($("table input:checked"))
+            download(null, `/youtube/download?v=${ res.v }`) // got v, select a, v format & recode ($("table input:checked"))
         })
     }
 
@@ -156,17 +156,46 @@
 
     function postDownload(uri) {
         var notifyID = Develon.notifyID
-        var req = $.ajax({
+        console.log(`提交下载${ uri }`)
+        var req = {
             url: uri,
             success: fun => {
+                console.log(`轮询结果`)
                 console.log(fun)
-                Develon.notify(fun.success)
+                if (!fun.success) {
+                    Develon.removeNotify(notifyID)
+                    Develon.notify(`下载失败!<br>${ fun.error }`)
+                    return
+                }
+                if (!fun.result.downloading && !fun.result.downloadSucceed) {
+                    Develon.removeNotify(notifyID)
+                    Develon.notify(`下载失败!<br>${ fun.result.metadata }`)
+                    return
+                }
+                if (!fun.result.downloading && fun.result.downloadSucceed) {
+                    Develon.removeNotify(notifyID)
+                    Develon.confirm(`合并完成, 点击确定下载`, fun2 => {
+                        window.href.location = `/${ fun.result.dest }`
+                        return false;
+                    })
+                    return
+                }
+                // fun.result.downloading
+                window.setTimeout(fun => {
+                    $.ajax(req)
+                }, 2000)
             },
             error: fun => {
-                if (fun.readyState === 0) Develon.notify("取消")
+                Develon.removeNotify(notifyID)
+                if (fun.readyState === 0) Develon.notify("下载已取消")
+                else Develon.notify("未知错误")
             },
+        }
+        var reqAjax = $.ajax(req)
+        Develon.notifyWait(`稍等`, fun => {
+            reqAjax.abort()
+            return true
         })
-        Develon.notifyWait(`稍等`, req.abort())
     }
 
     $(fun => {
