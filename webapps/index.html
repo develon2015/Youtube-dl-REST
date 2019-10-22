@@ -137,7 +137,7 @@
                     var recode = "auto"
                     for (var i = 0; i < inputs.length; i ++ ) {
                         if (inputs[i].name === "selectedVideo") vid = inputs[i].value
-                        if (inputs[i].name === "selectedVideo") aid = inputs[i].value
+                        if (inputs[i].name === "selectedAudio") aid = inputs[i].value
                         if (inputs[i].name === "recode") recode = inputs[i].value
                     }
                     uri = recode_uri + `&format=${ vid }x${ aid }`
@@ -175,7 +175,7 @@
                 if (!fun.result.downloading && fun.result.downloadSucceed) {
                     Develon.removeNotify(notifyID)
                     Develon.confirm(`合并完成, 点击确定下载`, fun2 => {
-                        window.href.location = `/${ fun.result.dest }`
+                        window.location.href = `/${ fun.result.dest }`
                         return false;
                     })
                     return
