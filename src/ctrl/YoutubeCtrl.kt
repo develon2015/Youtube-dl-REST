@@ -75,7 +75,7 @@ class YoutubeCtrl {
 
 			Thread{
 				shell.ready()
-				val r = shell.run(cmd, 120_000, 2000) // 耗时操作
+				val r = shell.run(cmd, 240_000, 6000) // 耗时操作
 				if (shell.lastCode() == 0) {
 					// 下载完成
 					global.log(r, "下载完成")
@@ -95,8 +95,9 @@ class YoutubeCtrl {
 						if (it.matches("ERROR.*".toRegex()) )
 							err = it
 					}
-					mapDownloading.set(request, DownloadResult(v, false, false, "下载失败", err ?: "未知的错误"))
+					mapDownloading.set(request, DownloadResult(v, false, false, "下载失败", err ?: "转码超时,请尝试mkv格式或auto"))
 					// 下载失败可能是转码失败, 这时仍然会产生一个空文件, 删除它
+					if (recode2 != null)
 					"rm '${ path }.${ recode2 }'".let{
 						global.log(it, "转码失败, 删除可能的空文件")
 						shell.run(it)
