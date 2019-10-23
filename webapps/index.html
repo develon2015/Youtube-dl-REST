@@ -38,13 +38,13 @@
 <script>
     // AJAX完成, 填充表单
     function fill(res) {
-        $("td").remove()
-        var tr = $("tr")
+        $("#divResult td").remove()
+        var tr = $("#divResult tr")
 
-        for (var i = 0; i < tr.length; i ++ ) {
-            if (tr[i].innerText === "")
-                $(tr[i]).remove()
-        }
+        tr.each(function () {
+            if (this.innerText.trim() === "")
+                this.remove()
+        })
 
         for (var i = 0; i < res.available.audios.length; i ++ ) {
             var r = res.available.audios[i]
