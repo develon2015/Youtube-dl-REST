@@ -4,7 +4,7 @@
 
 <style>
     #divURL { padding-top: 20px; }
-    #divResult { padding-top: 200px; }
+    #divResult { padding-top: 20px; }
 
     table {
         margin: auto;
@@ -80,7 +80,8 @@
         }
 
         // Display
-        $("#divResult").css("display", "contents")
+        //$("#divResult").css("display", "block")
+        $("#divResult").fadeIn()
 
         $("span#recode").bind("click", fun => {
             download(null, `/youtube/download?v=${ res.v }`) // got v, select a, v format & recode ($("table input:checked"))
@@ -88,6 +89,7 @@
     }
 
     parse = fun => {
+        $("#divResult").fadeOut()
         var url = $('input#url')[0].value
         var id = Develon.notifyID // 获取即将弹出的通知框ID
         var parseRequest = $.ajax({
