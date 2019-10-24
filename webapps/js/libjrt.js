@@ -26,7 +26,7 @@
                 mainHTML:
                     '<div id="divMain"></div>',
                 footerHTML:
-                    '<div id="divFooter"><a class="white" href="https://github.com/develon2015/Youtube-dl-REST">Designed by Develon</a><br>' + Develon.getNowTime() + "<br>" + '</div>',
+                    '<div id="divFooter"><a class="white" href="https://github.com/develon2015/Youtube-dl-REST">查看 Github 源码</a><br>' + Develon.getNowTime() + "<br>" + '</div>',
             }
 
             ui.createDivMain = function () {
