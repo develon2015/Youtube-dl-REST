@@ -1,7 +1,10 @@
 package lib.config
 
-import logger as log
 import java.io.File
+
+import lib.log.Logger
+
+val log = Logger("JSON解析器")
 
 class JsonConfig(file: File) {
 
@@ -12,7 +15,7 @@ class JsonConfig(file: File) {
 	init {
 		val content: String = String(file.readBytes(), Charsets.UTF_8)
 		//content = content.replace("""(\r|\n|\t)""".toRegex(), "")
-		log.d(content)
+		log.log(content)
 
 		val regex = """"(.+)":\s*("(?:.+)"|(?:\d+))""".toRegex()
 		val r = regex.findAll(content)

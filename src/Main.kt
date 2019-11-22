@@ -1,8 +1,9 @@
 import emcat.*
-import global
 
+import lib.log.Logger
 import lib.config.JsonConfig
 
+val global = Logger("Global")
 val config = JsonConfig("config.json")
 
 fun main(args: Array<String>) {
