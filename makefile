@@ -27,7 +27,7 @@ bin:
 
 .PHONY: run
 run:
-	sudo $(JK) $(CP) MainKt
+	$(JK) $(CP) MainKt
 
 .PHONY:test 
 test:
