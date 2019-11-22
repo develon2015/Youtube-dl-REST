@@ -37,7 +37,7 @@ a.white {
 }
 
 a:hover {
-    color: green;
+    color: white;
 }
 
 input.search {
