@@ -176,11 +176,11 @@ format code  extension  resolution note
 							continue
 						}
 
-				val audioRegex = """^(\d+)\s+(\w+)\s+audio only tiny\s+(\d+)k , (.*),\s+(.+)MiB$""".toRegex()
+				val audioRegex = """^(\d+)\s+(\w+)\s+audio only.*\s+(\d+)k , (.*),\s+((.+)MiB|.+)""".toRegex()
 						mr = audioRegex.matchEntire(a)
 						if (mr != null) {
-							val (id2, format, rate, info, size) = mr.destructured
-							val e = Audio(id2.toInt(), format, rate.toInt(), info, size.toDouble())
+							val (id2, format, rate, info, _, size) = mr.destructured
+							val e = Audio(id2.toInt(), format, rate.toInt(), info, if (size == "") 0.0 else size.toDouble())
 							println(e)
 							listAudio.add(e)
 							continue

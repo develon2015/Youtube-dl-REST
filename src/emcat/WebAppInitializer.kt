@@ -28,7 +28,7 @@ class WebAppInitializer : AbstractAnnotationConfigDispatcherServletInitializer()
 @EnableWebMvc
 open class ServletConfig : WebMvcConfigurer {
 	override fun configureContentNegotiation(configurer: ContentNegotiationConfigurer) {
-		configurer.defaultContentType(MediaType.APPLICATION_JSON_UTF8)
+		configurer.defaultContentType(MediaType.APPLICATION_JSON)
 	}
 
 	override fun configureDefaultServletHandling(configurer: DefaultServletHandlerConfigurer) {

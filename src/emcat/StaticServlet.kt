@@ -14,6 +14,9 @@ class StaticServlet(val webappDir: String = "./webapps") : DefaultServlet() {
 	val list = HashMap<String, Boolean>()
 	val utf8 = "charset=UTF-8"
 	val mime = mapOf("html" to "text/html;${ utf8 }", "htm" to "text/html;${ utf8 }", "js" to "text/javascript;${ utf8 }",
+				"json" to "application/json;${ utf8 }",
+				"png" to "image/png",
+				"php" to "text/html;${ utf8 }",
 				"css" to "text/css;${ utf8 }")
 
 	override fun service(req: HttpServletRequest, resp: HttpServletResponse) {
