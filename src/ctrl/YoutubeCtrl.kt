@@ -195,6 +195,25 @@ format code  extension  resolution note
 							listVideo.add(e)
 							continue
 						}
+
+/**
+old:
+133          mp4        426x240    240p  247k , avc1.4d4015, 15fps, video only, 6.58MiB
+new:
+135          mp4        854x480    DASH video 1155k , mp4_dash container, avc1.4d4014, 30fps, video only
+247          webm       1280x718   DASH video 1505k , webm_dash container, vp9, 30fps, video only
+*/
+				val videoRegex3 = """^(\d+)\s+(\w+)\s+(\d+x\d+)\s+(?:[^,]+)\s+(\d+)k , (.*), video.*""".toRegex()
+				//val videoRegex3 = """^(\d+)\s+(\w+)\s+(\d+x\d+)\s+.*\s(\d+)k\s+, (.*)""".toRegex()
+						mr = videoRegex3.matchEntire(a)
+						if (mr != null){
+							val (id2, format, scale, rate, info) = mr.destructured
+							val e = Video(id2.toInt(), format, scale, 0, rate.toInt(), info, 0.0)
+							println(e)
+							listVideo.add(e)
+							continue
+						}
+
 			}
 		
 			return mapOf("success" to true, "result" to mapOf(
