@@ -40,7 +40,7 @@ API
 /youtube/parse?https://www.youtube.com/watch?v=demoVideoID
 {
   "success" : true,
-  "reslut" : {
+  "result" : {
     "v" : "demoVideoID",
     "best" : {
       "audio" : {
