@@ -1,0 +1,15 @@
+{
+  "name": "Youtube-dl-REST-node",
+  "version": "1.0.0",
+  "description": "Youtube-dl-REST By Node.js",
+  "main": "index.js",
+  "scripts": {
+    "start": "/usr/bin/env node index.js"
+  },
+  "keywords": [],
+  "author": "develon",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}

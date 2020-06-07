@@ -25,14 +25,14 @@ div {
 
 div#divFooter {
     text-align: center;
-    background-color: green;
+    background-color: #63b175;
     padding: 20px 0px;
 }
 
 a.white {
     color: white;
-    text-decoration: none;
     text-decoration: underline dotted;
+    text-decoration: none;
     font-weight: bold;
 }
 
@@ -65,4 +65,11 @@ div.button {
     cursor: pointer;
     user-select: none;
     border-radius: 6px;
+}
+
+.flex {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
