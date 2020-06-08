@@ -66,6 +66,7 @@ function main() {
                         let cmd = `rm -r '${__dirname}/tmp'`;
                         console.log({'清理空间': cmd});
                         child_process.execSync(cmd);
+                        queue = [];;
                     }
                 });
             } catch(error) {
