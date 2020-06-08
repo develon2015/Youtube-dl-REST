@@ -24,7 +24,7 @@ function main() {
         let url = req._parsedUrl.query;
         console.log({ op: '解析', url });
 
-        let mr = url.match(/^https?:\/\/(?:youtu.be\/|www.youtube.com\/watch\?v=)([\w-]{11})$/);
+        let mr = url.match(/^https?:\/\/(?:youtu.be\/|(?:www|m).youtube.com\/watch\?v=)([\w-]{11})$/);
         if (!!!mr) {
             console.log('reject');
             res.send({
