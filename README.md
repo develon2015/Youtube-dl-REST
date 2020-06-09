@@ -19,11 +19,12 @@ sudo snap install node --classic --channel=14
 node -v
 ```
 
-### 2.安装[youtube-dl](https://github.com/ytdl-org/youtube-dl)
+### 2.安装[youtube-dl](https://github.com/ytdl-org/youtube-dl)和[FFmpeg](https://github.com/FFmpeg/FFmpeg)
 
-确保`youtube-dl`命令可用:
+确保`youtube-dl`命令和`ffmpeg`命令可用:
 ```
 sudo youtube-dl -U
+ffmpeg -version
 ```
 
 ### 3.克隆本项目
