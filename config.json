@@ -2,5 +2,6 @@
 	"address": "127.0.0.1",
 	"port": 28888,
 	"disk": "/dev/sda2",
+	"cookie": "cookies.txt",
 	"mode": "演示模式"
 }

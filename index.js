@@ -121,7 +121,7 @@ function task() {
                 let rs = [];
                 try {
                     if (true)
-                        rs = child_process.execSync(`youtube-dl -F '${msg.url}' 2> /dev/null`).toString().split('\n');
+                        rs = child_process.execSync(`youtube-dl ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''} -F '${msg.url}' 2> /dev/null`).toString().split('\n');
                     // 测试用数据
                     else
                         rs = `[youtube] sbz3fOe7rog: Downloading webpage
@@ -138,6 +138,7 @@ format code  extension  resolution note
 242          webm       426x240    240p  162k , vp9, 15fps, video only, 2.62MiB
 18           mp4        512x288    240p  355k , avc1.42001E, mp4a.40.2@ 96k (44100Hz), 9.58MiB (best)`.split('\n');
                 } catch(error) {
+                    console.log(error.toString());
                     worker_threads.parentPort.postMessage({
                         "error": "解析失败！",
                         "success": false
@@ -201,7 +202,7 @@ format code  extension  resolution note
                 const path = `${videoID}/${format}`;
                 const fullpath = `${__dirname}/tmp/${path}`;
                 let cmd = //`cd '${__dirname}' && (cd tmp > /dev/null || (mkdir tmp && cd tmp)) &&` +
-                    `youtube-dl 'https://www.youtube.com/watch?v=${videoID}' -f ${format.replace('x', '+')} ` +
+                    `youtube-dl  ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''} 'https://www.youtube.com/watch?v=${videoID}' -f ${format.replace('x', '+')} ` +
                     `-o '${fullpath}/${videoID}.%(ext)s' ${recode !== undefined ? `--recode ${recode}` : ''} -k --write-info-json`;
                 console.log({ cmd });
                 try {
