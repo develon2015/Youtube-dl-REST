@@ -2,11 +2,31 @@ const express = require('express');
 const child_process = require('child_process');
 const worker_threads = require('worker_threads');
 const fs = require('fs');
+const getRemoteIP = require('./get-remote-ip.js');
 
 const config = require('./config.json');
 
 function main() {
     let app = new express();
+    app.use((req, res, next) => {
+        console.log(`${getRemoteIP(req)}\t=>  ${req.url}`);
+        let isBlackIP = false;
+        try {
+            let blackIPs = fs.readFileSync(config.blacklist).toString().split(/\s/);
+            blackIPs.forEach(ip => {
+                if (getRemoteIP(req) === ip) {
+                    res.status(500);
+                    res.send(`<div style='font-size: 33vw; text-align: center'>500</div>`);
+                    console.log('黑名单IP！');
+                    isBlackIP = true;
+                    throw `黑名单 => ${ip}`;
+                }
+            });
+        } catch(error) {
+            //
+        }
+        if (!isBlackIP) next();
+    });
     app.use('/', express.static(`${__dirname}/webapps`));
     app.use('/file', (req, res, next) => {
         console.log(`下载${req.url}`);

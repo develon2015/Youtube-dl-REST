@@ -3,5 +3,6 @@
 	"port": 28888,
 	"disk": "/dev/sda2",
 	"cookie": "cookies.txt",
+	"blacklist": "blacklist.txt",
 	"mode": "演示模式"
 }
