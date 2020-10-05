@@ -4,7 +4,7 @@ const worker_threads = require('worker_threads');
 const fs = require('fs');
 const getRemoteIP = require('./get-remote-ip.js');
 
-const config = require('./config.json');
+const config = require('./config.json'); // 加载配置文件
 
 function main() {
     let app = new express();
@@ -53,6 +53,7 @@ function main() {
             });
             return;
         }
+        checkDisk(); // 解析视频前先检查磁盘空间
 
         let thread = new worker_threads.Worker(__filename);
         thread.once('message', msg => {
@@ -75,9 +76,7 @@ function main() {
             return res.send({ "error": "演示模式，关闭转码功能<br>本项目已使用Node.js重写<br>请克隆本项目后自行部署", "success": false });
 
         if (queue[JSON.stringify(req.query)] === undefined) {
-            // 检查磁盘空间
-            checkDisk();
-
+            checkDisk(); // 下载视频前先检查磁盘空间
 
             queue[JSON.stringify(req.query)] = {
                 "success": true,
@@ -107,7 +106,29 @@ function main() {
     app.listen(config.port, config.address, () => {
         console.log('服务已启动');
     });
-}
+
+    /**
+     * 检测磁盘空间, 必要时清理空间并清空队列queue
+     */
+    function checkDisk() {
+        try {
+            let df = child_process.execSync(`df -h .`).toString();
+            df.split('\n').forEach(it => {
+                console.log({ '空间': it });
+                // /dev/sda2        39G   19G   19G  51% /
+                let mr = it.match(/.*\s(\d+)%/);
+                if (!!mr && Number.parseInt(mr[1]) > 90) {
+                    let cmd = `rm -r '${__dirname}/tmp'`;
+                    console.log({ '清理空间': cmd });
+                    child_process.execSync(cmd);
+                    queue = [];
+                }
+            });
+        } catch (error) {
+            //
+        }
+    } // checkDisk()
+} // main()
 
 function getAudio(id, format, rate, info, size) {
     return { id, format, rate, info, size };
@@ -117,6 +138,9 @@ function getVideo(id, format, scale, frame, rate, info, size) {
     return { id, format, scale, frame, rate, info, size };
 }
 
+/**
+ * Worker线程入口
+ */
 function task() {
     worker_threads.parentPort.once('message', msg => {
         switch (msg.op) {
@@ -126,7 +150,6 @@ function task() {
 
                 let rs = [];
                 try {
-                    checkDisk();
                     if (true)
                         rs = child_process.execSync(`youtube-dl ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''} -F '${msg.url}' 2> /dev/null`).toString().split('\n');
                     // 测试用数据
@@ -259,26 +282,6 @@ format code  extension  resolution note
             } // end of download
         } // end of switch
     });
-}
-
-// 检测磁盘空间
-function checkDisk() {
-            try {
-                let df = child_process.execSync(`df -h .`).toString();
-                df.split('\n').forEach(it => {
-                    console.log({'空间': it});
-                    // /dev/sda2        39G   19G   19G  51% /
-                    let mr = it.match(/.*\s(\d+)%/);
-                    if (!!mr && Number.parseInt(mr[1]) > 90) {
-                        let cmd = `rm -r '${__dirname}/tmp'`;
-                        console.log({'清理空间': cmd});
-                        child_process.execSync(cmd);
-                        queue = [];;
-                    }
-                });
-            } catch(error) {
-                //
-            }
 }
 
 if (worker_threads.isMainThread)
