@@ -6,6 +6,9 @@ const getRemoteIP = require('./get-remote-ip.js');
 
 const config = require('./config.json'); // 加载配置文件
 
+/*======================================================================================
+main 主线程
+========================================================================================*/
 function main() {
     let app = new express();
     app.use((req, res, next) => {
@@ -130,12 +133,85 @@ function main() {
     } // checkDisk()
 } // main()
 
+
+
+/*======================================================================================
+Worker
+========================================================================================*/
 function getAudio(id, format, rate, info, size) {
     return { id, format, rate, info, size };
 }
 
 function getVideo(id, format, scale, frame, rate, info, size) {
     return { id, format, scale, frame, rate, info, size };
+}
+
+/**
+ * 在以下形式的字符串中捕获字幕:
+ * Language formats <= 返回0, 继续
+ * gu       vtt, ttml, srv3, srv2, srv1
+ * zh-Hans  vtt, ttml, srv3, srv2, srv1
+ * 其它形式一律视为终结符, 返回-1, 终结
+ * @param {String} line 
+ */
+function catchSubtitle(line) {
+    let mr = line.match(/([a-z]{2}(?:-[a-zA-Z]+)?).*/);
+    if (mr) return mr[1];
+    if (mr.match(/.*Language formats.*/)) return 0;
+    return -1;
+}
+
+/**
+ * 同步解析字幕
+ * @param {{ op: 'parse', url: String, videoID: String }} msg 
+ */
+function parseSubtitle(msg) {
+    let cmd = `youtube-dl --list-subs "${msg.url}"`;
+    console.log(`解析字幕, 命令: ${cmd}`);
+    try {
+        let rs = child_process.execSync(
+            `youtube-dl --list-subs ${config.cookie !== undefined ? `--cookies "${config.cookie}"` : ''} '${msg.url}' 2> /dev/null`
+        ).toString()
+            .split(/(\r\n|\n)/);
+
+        /** 是否没有自动字幕 */
+        let noAutoSub = true;
+        let officialSub = [];
+
+        for (let i = 0; i < rs.length; i ++ ) {
+            console.log('=>  ', rs[i]);
+            // 排除一下连自动字幕都没有的, 那一定是没有任何字幕可用
+            if (rs[i].match(/.*Available automatic captions for .*?:/)) { // ?表示非贪婪, 遇到冒号即停止
+                noAutoSub = false; // 排除即可, 全都是把整个字幕列表输出一遍, 这部分不需要捕获
+                continue;
+            }
+            // 解析官方字幕
+            if (rs[i].match(/.*Available subtitles for .*?:/)) {
+                FOR_J: // 打标签, 因为需要从switch中断
+                for (let j = i + 1; j < rs.length; j ++ ) {
+                    //
+                    sub = catchSubtitle(rs[j]);
+                    switch (sub) {
+                        case -1: { // 终结
+                            break FOR_J;
+                        }
+                        case 0: { // 继续
+                            continue;
+                        }
+                        default: { // 捕获
+                            officialSub.push(sub);
+                            break;
+                        }
+                    }
+                } // for j
+            } // if
+        } // for i
+        console.log('捕获到官方字幕:');
+        console.log(officialSub);
+    } catch (error) {
+        console.error(error);
+    }
+    return {};
 }
 
 /**
@@ -211,6 +287,8 @@ format code  extension  resolution note
                 videos.sort((a, b) => a.rate - b.rate);
                 bestAudio = audios[audios.length - 1];
                 bestVideo = videos[videos.length - 1];
+                
+                let subs = parseSubtitle(msg); // 解析字幕
 
                 worker_threads.parentPort.postMessage({
                     "success": true,
@@ -220,7 +298,7 @@ format code  extension  resolution note
                             "audio": bestAudio,
                             "video": bestVideo,
                         },
-                        "available": { audios, videos }
+                        "available": { audios, videos, subs }
                     }
                 });
 
@@ -284,7 +362,11 @@ format code  extension  resolution note
     });
 }
 
+/*======================================================================================
+index.js 兵分两路
+========================================================================================*/
 if (worker_threads.isMainThread)
     main();
 else
     task();
+/*======================================================================================*/
