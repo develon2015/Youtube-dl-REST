@@ -1,7 +1,6 @@
 {
-	"address": "127.0.0.1",
-	"port": 28888,
-	"disk": "/dev/sda2",
+	"address": "0.0.0.0",
+	"port": 80,
 	"cookie": "cookies.txt",
 	"blacklist": "blacklist.txt",
 	"mode": "演示模式"

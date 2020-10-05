@@ -76,22 +76,8 @@ function main() {
 
         if (queue[JSON.stringify(req.query)] === undefined) {
             // 检查磁盘空间
-            try {
-                let df = child_process.execSync(`df -h '${config.disk}'`).toString();
-                df.split('\n').forEach(it => {
-                    console.log({'空间': it});
-                    // /dev/sda2        39G   19G   19G  51% /
-                    let mr = it.match(/.*\s(\d+)%/);
-                    if (!!mr && Number.parseInt(mr[1]) > 90) {
-                        let cmd = `rm -r '${__dirname}/tmp'`;
-                        console.log({'清理空间': cmd});
-                        child_process.execSync(cmd);
-                        queue = [];;
-                    }
-                });
-            } catch(error) {
-                //
-            }
+            checkDisk();
+
 
             queue[JSON.stringify(req.query)] = {
                 "success": true,
@@ -140,6 +126,7 @@ function task() {
 
                 let rs = [];
                 try {
+                    checkDisk();
                     if (true)
                         rs = child_process.execSync(`youtube-dl ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''} -F '${msg.url}' 2> /dev/null`).toString().split('\n');
                     // 测试用数据
@@ -272,6 +259,26 @@ format code  extension  resolution note
             } // end of download
         } // end of switch
     });
+}
+
+// 检测磁盘空间
+function checkDisk() {
+            try {
+                let df = child_process.execSync(`df -h .`).toString();
+                df.split('\n').forEach(it => {
+                    console.log({'空间': it});
+                    // /dev/sda2        39G   19G   19G  51% /
+                    let mr = it.match(/.*\s(\d+)%/);
+                    if (!!mr && Number.parseInt(mr[1]) > 90) {
+                        let cmd = `rm -r '${__dirname}/tmp'`;
+                        console.log({'清理空间': cmd});
+                        child_process.execSync(cmd);
+                        queue = [];;
+                    }
+                });
+            } catch(error) {
+                //
+            }
 }
 
 if (worker_threads.isMainThread)
