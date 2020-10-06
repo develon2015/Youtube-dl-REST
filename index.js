@@ -179,7 +179,7 @@ function parseSubtitle(msg) {
         let officialSub = [];
 
         for (let i = 0; i < rs.length; i ++ ) {
-            if (rs[i].trim() == '') continue; // 空行直接忽略
+            if (rs[i].trim() === '' || rs[i].trim() === '\n') continue; // 空行直接忽略
             console.log('=>  ', rs[i]);
             // 排除一下连自动字幕都没有的, 那一定是没有任何字幕可用
             if (rs[i].match(/.*Available automatic captions for .*?:/)) { // ?表示非贪婪, 遇到冒号即停止
@@ -190,7 +190,7 @@ function parseSubtitle(msg) {
             if (rs[i].match(/.*Available subtitles for .*?:/)) {
                 FOR_J: // 打标签, 因为需要从switch中断
                 for (let j = i + 1; j < rs.length; j ++ ) {
-                    //
+                    if (rs[j].trim() === '' || rs[j].trim() === '\n') continue; // 空行直接忽略
                     sub = catchSubtitle(rs[j]);
                     switch (sub) {
                         case -1: { // 终结
@@ -208,7 +208,17 @@ function parseSubtitle(msg) {
             } // if
         } // for i
         console.log('捕获到官方字幕:');
-        console.log(officialSub);
+        console.log(JSON.stringify(officialSub, null, 2));
+
+        if (officialSub.length < 1) { // 没有官方字幕
+            if (noAutoSub) { // 没有任何字幕
+                console.log('没有任何字幕');
+            } else { // 没有官方字幕但是有自动生成字幕
+                console.log('有自动生成字幕');
+            }
+        } else { // 有官方字幕, 同时可以自动翻译为任何字幕
+            console.log('有官方字幕');
+        }
     } catch (error) {
         console.log(error); // npm 命令无法捕获error错误流
     }
