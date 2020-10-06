@@ -155,9 +155,9 @@ function getVideo(id, format, scale, frame, rate, info, size) {
  * @param {String} line 
  */
 function catchSubtitle(line) {
-    let mr = line.match(/([a-z]{2}(?:-[a-zA-Z]+)?).*/);
+    if (line.match(/^Language formats.*/)) return 0;
+    let mr = line.match(/^([a-z]{2}(?:-[a-zA-Z]+)?).*/);
     if (mr) return mr[1];
-    if (line.match(/.*Language formats.*/)) return 0;
     return -1;
 }
 
