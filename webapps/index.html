@@ -44,12 +44,43 @@
         flex-direction: column;
         align-items: center;
     }
+
+    .available {
+        color: mediumseagreen;
+        margin: 20px 0;
+        font-size: 120%;
+    }
+
+    .btn-google-sub {
+        display: inline-block;
+        cursor: pointer;
+        user-select: none;
+        padding: 10px 20px;
+        background: mediumorchid;
+    }
+
+    .btn-google-sub:active {
+        color: white;
+        background: black;
+    }
 </style>
 
 <!-- <script src="js/loadbar.js"></script> -->
 <!-- <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> -->
 <script src="js/jquery.js"></script>
 <script src="js/libjrt.js"></script>
+
+<!-- 自动化测试 -->
+<script>
+    window.test = true;
+    test = false;
+    $(() => {
+        if (!!!test) return;
+        url.value = 'https://www.youtube.com/watch?v=XXX';
+        document.querySelector('form').submit();
+    })
+</script>
+
 <script>
     // AJAX完成, 填充表单
     function fill(res) {
@@ -94,6 +125,63 @@
             }
         }
 
+        function info(code) {
+            switch (code) {
+                case 'zh':
+                case 'zh-Hans': return '  (中文-简体)';
+                case 'zh-HK':
+                case 'zh-Hant': return ' (中文-繁體)';
+                case 'zh-TW': return ' (中文-台灣)';
+                case 'ja':
+                case 'ja-JP': return ' (日本語)';
+                case 'en': return ' (English)';
+                case 'ko': return ' (韓國語)';
+            }
+            return '';
+        }
+
+        // 字幕
+        for (var i = 0; i < res.available.subs.length; i ++ ) {
+            var r = res.available.subs[i];
+            if (r === 'auto') continue;
+            let row = $(`<tr>
+                <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="checkbox" style="height: 20px"></td>
+                <td>${r}${info(r)}</td>
+                <td style="">
+                    <a href="#">.srt</a>
+                    <a href="#">.ass</a>
+                    <a href="#">.vtt</a>
+                    <a href="#">.lrc</a>
+                </td>
+            </tr>`);
+            row.appendTo("#table_native_subs");
+            continue;
+            row = $(`<tr>
+                <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="radio" style="height: 20px"></td>
+                <td><a href="javascript: void(0)" onclick="window.download('/youtube/download?v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
+                <td>${ r.format }</td>
+                <td>${ r.scale }</td>
+                <td>${ r.rate }</td>
+                <td>${ r.size }</td>
+                <td>${ r.info }</td>
+            </tr>`)
+            row.appendTo("table#videos")
+            if (r.id === res.best.video.id) {
+                $(`#video${ r.id }`).click()
+            }
+        }
+        
+        if (res.available.subs.length === 0) { // 没有字幕
+            $('#title_subs').html('该视频沒有任何字幕').show();
+            $('#subs').hide(); // 隐藏表格
+        } else if (res.available.subs.length === 1 && res.available.subs[0] === 'auto') { // 自动字幕
+            $('#title_subs').html('该视频没有原生字幕, 但可翻译并下载自动字幕').show();
+            $('#subs').show(); // 显示表格
+        } else { // 原生字幕
+            $('#title_subs').html('该视频可下载原生字幕, 也可进行翻译').show();
+            $('#subs').show(); // 显示表格
+        }
+
         // Display
         //$("#divResult").css("display", "block")
         $("#divResult").fadeIn()
@@ -119,8 +207,54 @@
                 Develon.removeNotify(id)
                 fill(fun.result)
             },
-            error: fun => {
-                if (fun.readyState === 0) {
+            error(event) {
+                let i = Math.round(Math.random() * 3);
+                let onaji = {
+                    "success": true, "result": {
+                        "v": "xxx", "best": { "audio": { "id": "251", "format": "webm", "rate": "141", "info": "opus @160k (48000Hz)", "size": "3.63" }, "video": { "id": "137", "format": "mp4", "scale": "1920x1080", "frame": "1080", "rate": "4502", "info": "avc1.640028, 30fps", "size": "104.05" } },
+                        "available": {
+                            "audios": [{ "id": "249", "format": "webm", "rate": "57", "info": "opus @ 50k (48000Hz)", "size": "1.40" }, { "id": "250", "format": "webm", "rate": "74", "info": "opus @ 70k (48000Hz)", "size": "1.85" }],
+                            "videos": [{ "id": "394", "format": "mp4", "scale": "256x144", "frame": "144", "rate": "80", "info": "av01.0.00M.08, 30fps", "size": "1.97" }],
+                        }
+                    }
+                };
+                console.log(i);
+                switch (i) {
+                    case 1: {
+                        console.log('没有字幕');
+                        onaji.result.available.subs = [];
+                        break;
+                    }
+                    case 2: {
+                        console.log('一个原生一个自动');
+                        onaji.result.available.subs = ['auto', 'ja'];
+                        break;
+                    }
+                    case 0: {
+                        console.log('两个原生');
+                        onaji.result.available.subs = ['en', 'zh-Hans'];
+                        break;
+                    }
+                    case 3: {
+                        console.log('一个自动');
+                        onaji.result.available.subs = ['auto'];
+                        break;
+                    }
+                }
+                if (!!test) return this.success(onaji);
+                if (!!test) return this.success({
+                    "success": true, "result": {
+                        "v": "xxx", "best": { "audio": { "id": "251", "format": "webm", "rate": "141", "info": "opus @160k (48000Hz)", "size": "3.63" }, "video": { "id": "137", "format": "mp4", "scale": "1920x1080", "frame": "1080", "rate": "4502", "info": "avc1.640028, 30fps", "size": "104.05" } },
+                        "available": {
+                            "audios": [{ "id": "249", "format": "webm", "rate": "57", "info": "opus @ 50k (48000Hz)", "size": "1.40" }, { "id": "250", "format": "webm", "rate": "74", "info": "opus @ 70k (48000Hz)", "size": "1.85" }],
+                            "videos": [{ "id": "394", "format": "mp4", "scale": "256x144", "frame": "144", "rate": "80", "info": "av01.0.00M.08, 30fps", "size": "1.97" }],
+                            "subs": ['en', 'zh-Hans', 'zh-Hant', 'zh-TW'],
+                            // "subs": [],
+                            // "subs": ['auto'],
+                        }
+                    }
+                });
+                if (event.readyState === 0) {
                     Develon.notify("已取消请求") // 连接被重置时都会导致错误
                     Develon.removeNotify(id)
                     return
@@ -238,7 +372,7 @@
 
     <div id="divResult" class="center" style="display: none">
 
-        <div>可用音频</div>
+        <div class="available">可用音频</div>
         <table id="audios">
             <tr>
                 <th>选中</td>
@@ -251,7 +385,7 @@
             </tr>
         </table>
 
-        <div>可用视频</div>
+        <div class="available">可用视频</div>
         <table id="videos">
             <tr>
                 <th>选中</td>
@@ -263,6 +397,36 @@
                 <th colspan="2">其它</th>
             </tr>
         </table>
+
+        <div class="available" style="margin-bottom: 0;">封装软字幕</div>
+        <div id="title_subs" style="display: none;">没有任何字幕</div>
+
+        <div id="subs" style="padding-top: 20px;">
+            <div id="native_subs">
+                <div id="title_subs">原生字幕</div>
+                <div class="btn-google-sub" onclick="$('#native_subs').toggle(); $('#auto_subs').toggle();">谷歌翻译字幕</div>
+                <table id="table_native_subs">
+                    <tr>
+                        <th>选中</td>
+                        <th>语言</th>
+                        <th>下载外挂字幕</th>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 不主动展示翻译字幕 -->
+            <div id="auto_subs" style="display: none;">
+                <div id="title_subs">翻译字幕</div>
+                <div class="btn-google-sub" onclick="$('#native_subs').toggle(); $('#auto_subs').toggle();">切换原生字幕</div>
+                <table id="table_auto_subs">
+                    <tr>
+                        <th>选中</td>
+                        <th>语言</th>
+                        <th>下载外挂字幕</th>
+                    </tr>
+                </table>
+            </div>
+        </div>
 
         <div style="padding: 20px 0px">
             <span id="recode" class="button">合并 / 下载</span>

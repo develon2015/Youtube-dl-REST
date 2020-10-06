@@ -180,7 +180,7 @@ function parseSubtitle(msg) {
 
         for (let i = 0; i < rs.length; i ++ ) {
             if (rs[i].trim() === '' || rs[i].trim() === '\n') continue; // 空行直接忽略
-            console.log('=>  ', rs[i]);
+            // console.log('=>  ', rs[i]);
             // 排除一下连自动字幕都没有的, 那一定是没有任何字幕可用
             if (rs[i].match(/.*Available automatic captions for .*?:/)) { // ?表示非贪婪, 遇到冒号即停止
                 noAutoSub = false; // 排除即可, 全都是把整个字幕列表输出一遍, 这部分不需要捕获
@@ -207,22 +207,24 @@ function parseSubtitle(msg) {
                 } // for j
             } // if
         } // for i
-        console.log('捕获到官方字幕:');
-        console.log(JSON.stringify(officialSub, null, 2));
 
         if (officialSub.length < 1) { // 没有官方字幕
             if (noAutoSub) { // 没有任何字幕
                 console.log('没有任何字幕');
-            } else { // 没有官方字幕但是有自动生成字幕
+                return [];
+            } else { // 没有官方字幕但是有自动生成字幕, 可以自动翻译为任何字幕
                 console.log('有自动生成字幕');
+                return ['auto'];
             }
         } else { // 有官方字幕, 同时可以自动翻译为任何字幕
             console.log('有官方字幕');
+            console.log(JSON.stringify(officialSub, null, 0));
+            return officialSub;
         }
     } catch (error) {
         console.log(error); // npm 命令无法捕获error错误流
     }
-    return {};
+    return [];
 }
 
 /**
