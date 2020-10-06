@@ -157,7 +157,7 @@ function getVideo(id, format, scale, frame, rate, info, size) {
 function catchSubtitle(line) {
     let mr = line.match(/([a-z]{2}(?:-[a-zA-Z]+)?).*/);
     if (mr) return mr[1];
-    if (mr.match(/.*Language formats.*/)) return 0;
+    if (line.match(/.*Language formats.*/)) return 0;
     return -1;
 }
 
@@ -179,6 +179,7 @@ function parseSubtitle(msg) {
         let officialSub = [];
 
         for (let i = 0; i < rs.length; i ++ ) {
+            if (rs[i].trim() == '') continue; // 空行直接忽略
             console.log('=>  ', rs[i]);
             // 排除一下连自动字幕都没有的, 那一定是没有任何字幕可用
             if (rs[i].match(/.*Available automatic captions for .*?:/)) { // ?表示非贪婪, 遇到冒号即停止
@@ -209,7 +210,7 @@ function parseSubtitle(msg) {
         console.log('捕获到官方字幕:');
         console.log(officialSub);
     } catch (error) {
-        console.error(error);
+        console.log(error); // npm 命令无法捕获error错误流
     }
     return {};
 }
