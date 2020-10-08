@@ -73,7 +73,7 @@
 <!-- 自动化测试 -->
 <script>
     window.test = true;
-    test = false;
+    // test = false;
     $(() => {
         if (!!!test) return;
         url.value = 'https://www.youtube.com/watch?v=XXX';
@@ -140,49 +140,91 @@
             return '';
         }
 
-        // 字幕
+        window.downloadOutSub = (/** 字幕后缀 */ ext, /** 原生字幕: 'native', 翻译字幕: 'auto' */ type) => { // 绑定下载外挂字幕事件
+            if (false) { // 模拟保存文件
+                $.ajax('/asfd', {
+                    error() {
+                        let a = document.createElement('a');
+                        a.download = '字幕.txt';
+                        a.href = 'data: application/octet-stream; utf-8,Hello,你好';
+                        setTimeout(() => {
+                            a.click();
+                        }, 2000);
+                    }
+                });
+            }
+            $.ajax('/youtube/subtitle', {
+                method: 'post',
+                dataType: 'application/json',
+                accepts: ['application/json'],
+                data: {
+                    id: res.v, // 字幕对应视频的ID
+                    ext, // 字幕格式
+                    type, // 原生或翻译字幕
+                },
+                success(resp) { // 字幕请求成功
+                    console.log(resp);
+                },
+                error(resp) { // 失败
+                    console.log(resp);
+                    alert('下载失败!');
+                },
+            });
+        };
+
+        // 原生字幕
         for (var i = 0; i < res.available.subs.length; i ++ ) {
             var r = res.available.subs[i];
-            if (r === 'auto') continue;
+            if (r === 'auto') continue; // 忽略自动字幕
             let row = $(`<tr>
                 <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="checkbox" style="height: 20px"></td>
                 <td>${r}${info(r)}</td>
-                <td style="">
-                    <a href="#">.srt</a>
-                    <a href="#">.ass</a>
-                    <a href="#">.vtt</a>
-                    <a href="#">.lrc</a>
+                <td style="user-select: none;">
+                    ${
+                        (() => {
+                            return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
+                                return html + `<a target="_blank" href="javascript: void(0)" onclick="downloadOutSub('${crt}', 'native')">${crt}</a><span>&nbsp;&nbsp;</span>`;
+                            }, "<span>&nbsp;&nbsp;</span>");
+                        })()
+                    }
                 </td>
             </tr>`);
             row.appendTo("#table_native_subs");
-            continue;
-            row = $(`<tr>
-                <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="radio" style="height: 20px"></td>
-                <td><a href="javascript: void(0)" onclick="window.download('/youtube/download?v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
-                <td>${ r.format }</td>
-                <td>${ r.scale }</td>
-                <td>${ r.rate }</td>
-                <td>${ r.size }</td>
-                <td>${ r.info }</td>
-            </tr>`)
-            row.appendTo("table#videos")
-            if (r.id === res.best.video.id) {
-                $(`#video${ r.id }`).click()
-            }
-        }
+        } // 字幕end
         
+        // 字幕相关UI逻辑
         if (res.available.subs.length === 0) { // 没有字幕
             $('#title_subs').html('该视频沒有任何字幕').show();
             $('#subs').hide(); // 隐藏表格
-        } else if (res.available.subs.length === 1 && res.available.subs[0] === 'auto') { // 自动字幕
-            $('#title_subs').html('该视频没有原生字幕, 但可翻译并下载自动字幕').show();
-            $('#subs').show(); // 显示表格
-        } else { // 原生字幕
-            $('#title_subs').html('该视频可下载原生字幕, 也可进行翻译').show();
-            $('#subs').show(); // 显示表格
+        } else { // 有字幕, 可以翻译
+            if (res.available.subs.length === 1 && res.available.subs[0] === 'auto') { // 仅有自动字幕
+                $('#title_subs').html('该视频没有原生字幕, 但可翻译并下载自动字幕').show();
+                $('#subs').show(); // 显示表格
+            } else { // 有至少一种原生字幕
+                $('#title_subs').html('该视频可下载原生字幕, 也可进行翻译').show();
+                $('#subs').show(); // 显示表格
+                $('#native_subs').show();
+                $('#auto_subs').hide();
+            }
+
+            // 自动翻译
+            row = $(`<tr>
+                <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="checkbox" style="height: 20px"></td>
+                <td>中文简体</td>
+                <td style="user-select: none;">
+                    ${
+                        (() => {
+                            return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
+                                return html + `<a target="_blank" href="javascript: void(0)" onclick="downloadOutSub('${crt}', 'auto')">${crt}</a><span>&nbsp;&nbsp;</span>`;
+                            }, "<span>&nbsp;&nbsp;</span>");
+                        })()
+                    }
+                </td>
+            </tr>`);
+            row.appendTo("#table_auto_subs");
         }
 
-        // Display
+        // Display解析结果
         //$("#divResult").css("display", "block")
         $("#divResult").fadeIn()
 
@@ -241,6 +283,7 @@
                         break;
                     }
                 }
+                onaji.result.available.subs = ['en', 'zh-Hans'];
                 if (!!test) return this.success(onaji);
                 if (!!test) return this.success({
                     "success": true, "result": {

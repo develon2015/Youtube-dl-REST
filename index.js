@@ -101,10 +101,19 @@ function main() {
             });
             thread.postMessage({ op: 'download', videoID: v, format, recode });
         }
+    }); // /youtube/download end
 
-        // console.log(queue);
-        res.send(queue[JSON.stringify(req.query)]);
-    });
+        // API: 下载字幕
+    app.post('/youtube/subtitle', (req, res) => {
+        let { v, ext, type } = req.data;
+        console.log('data', req.data);
+        // checkDisk(); // 下载字幕前先检查磁盘空间
+        // let thread = new worker_threads.Worker(__filename); // 启动子线程
+        // thread.once('message', msg => {
+            // 下载成功或失败，更新queue
+        // });
+        // thread.postMessage({ v, ext, type });
+    }); // /youtube/subtitle end
 
     app.listen(config.port, config.address, () => {
         console.log('服务已启动');
