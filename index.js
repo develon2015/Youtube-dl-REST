@@ -273,7 +273,7 @@ function task() {
                     console.log('下载的字幕:', file);
                     let file_convert = `${before}.${locale}${ext}`; // 要转换的字幕文件
                     console.log('转换为:', file_convert);
-                    let cmd_ffmpeg = `ffmpeg -i '${file}' '${file_convert}'`;
+                    let cmd_ffmpeg = `ffmpeg -i '${file}' '${file_convert}' -y`; // -y 强制覆盖文件
                     console.log(`转换字幕, 命令: ${cmd_ffmpeg}`);
                     child_process.execSync(cmd_ffmpeg);
                     // info文件路径
