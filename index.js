@@ -69,7 +69,7 @@ function main() {
 
     let queue = [];
     app.get('/youtube/download', (req, res) => {
-        let { v, format, recode } = req.query;
+        let { v, format, recode, subs } = req.query;
         if (!!!v.match(/^[\w-]{11}$/))
             return res.send({ "error": "Qurey参数v错误: 请提供一个正确的Video ID", "success": false });
 
@@ -78,6 +78,9 @@ function main() {
 
         if (config.mode === '演示模式' && !!recode)
             return res.send({ "error": "演示模式，关闭转码功能<br>本项目已使用Node.js重写<br>请克隆本项目后自行部署", "success": false });
+
+        if (subs !== '' && !subs.match(/^([a-z]{2}(-[a-zA-Z]{2,4})?,?)+$/))
+            return res.send({ "error": "字幕不正确!", "success": false });
 
         if (queue[JSON.stringify(req.query)] === undefined) {
             checkDisk(); // 下载视频前先检查磁盘空间
@@ -100,7 +103,7 @@ function main() {
                 console.log(JSON.stringify(msg, null, 1));
                 queue[JSON.stringify(req.query)] = msg;
             });
-            thread.postMessage({ op: 'download', videoID: v, format, recode });
+            thread.postMessage({ op: 'download', videoID: v, format, recode, subs });
         } // if end
         // 发送轮询结果
         res.send(queue[JSON.stringify(req.query)]);
@@ -110,6 +113,16 @@ function main() {
     app.use(json());
     app.post('/youtube/subtitle', (req, res) => {
         let { id, locale, ext, type } = req.body;
+
+        if (!id.match(/^[\w-]{11}$/) ||
+            !ext.match(/^(srt|ass|vtt|lrc)$/) ||
+            !type.match(/^(auto|native)$/) ||
+            !locale.match(/^([a-z]{2}(-[a-zA-Z]{2,4})?)+$/) ||
+            false
+        ) {
+            console.log('字幕请求预检被禁止, 可疑请求:', req.body);
+            res.send({ success: false });
+        }
         // checkDisk(); // 下载字幕前先检查磁盘空间
         let thread = new worker_threads.Worker(__filename); // 启动子线程
         thread.once('message', msg => {
@@ -384,7 +397,7 @@ format code  extension  resolution note
             }
 
             case 'download': {
-                let { videoID, format, recode } = msg;
+                let { videoID, format, recode, subs } = msg; // subs字幕内封暂未实现
                 const path = `${videoID}/${format}`;
                 const fullpath = `${__dirname}/tmp/${path}`;
                 let cmd = //`cd '${__dirname}' && (cd tmp > /dev/null || (mkdir tmp && cd tmp)) &&` +

@@ -187,7 +187,7 @@
             var r = res.available.subs[i]; // 语种
             if (r === 'auto') continue; // 忽略自动字幕
             let row = $(`<tr>
-                <td><input class="td" id="video${ r.id }" value="${ r }" name="nativeSub" type="checkbox" style="height: 20px"></td>
+                <td><input disabled title="暂不支持内封, 请下载外挂字幕" class="td" id="video${ r.id }" value="${ r }" name="nativeSub" type="checkbox" style="height: 20px"></td>
                 <td>${r}${info(r)}</td>
                 <td style="user-select: none;">
                     ${
@@ -222,7 +222,7 @@
             let list_lang = ['zh-Hans', 'zh-Hant', 'en', 'ja', 'ko']; // 预设语种
             list_lang.forEach(lang => {
                 row = $(`<tr>
-                    <td><input class="td" id="video${ r.id }" value="${ lang }" name="autoSub" type="checkbox" style="height: 20px"></td>
+                    <td><input disabled title="暂不支持内封, 请下载外挂字幕" class="td" id="video${ r.id }" value="${ lang }" name="autoSub" type="checkbox" style="height: 20px"></td>
                     <td>${lang}${info(lang)}</td>
                     <td style="user-select: none;">
                         ${
