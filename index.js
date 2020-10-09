@@ -1,4 +1,5 @@
 const express = require('express');
+const json = require('body-parser').json;
 const child_process = require('child_process');
 const worker_threads = require('worker_threads');
 const fs = require('fs');
@@ -100,19 +101,26 @@ function main() {
                 queue[JSON.stringify(req.query)] = msg;
             });
             thread.postMessage({ op: 'download', videoID: v, format, recode });
-        }
+        } // if end
+        // 发送轮询结果
+        res.send(queue[JSON.stringify(req.query)]);
     }); // /youtube/download end
 
-        // API: 下载字幕
+    // API: 下载字幕
+    app.use(json());
     app.post('/youtube/subtitle', (req, res) => {
-        let { v, ext, type } = req.data;
-        console.log('data', req.data);
+        let { id, ext, type } = req.data;
         // checkDisk(); // 下载字幕前先检查磁盘空间
-        // let thread = new worker_threads.Worker(__filename); // 启动子线程
-        // thread.once('message', msg => {
-            // 下载成功或失败，更新queue
-        // });
-        // thread.postMessage({ v, ext, type });
+        let thread = new worker_threads.Worker(__filename); // 启动子线程
+        thread.once('message', msg => {
+            // 下载字幕成功或失败
+            if (msg.success) {
+                console.log('字幕下载失败');
+            } else {
+                console.log('字幕下载成功');
+            }
+        });
+        thread.postMessage({ op: 'subtitle', id, ext, type });
     }); // /youtube/subtitle end
 
     app.listen(config.port, config.address, () => {
@@ -242,6 +250,44 @@ function parseSubtitle(msg) {
 function task() {
     worker_threads.parentPort.once('message', msg => {
         switch (msg.op) {
+            case 'subtitle': {
+                let { id, ext, type: locale } = msg;
+                // 先下载字幕
+                let fullpath = `${__dirname}/tmp/${id}`; // 字幕工作路径
+                let cmd_download = `youtube-dl -o '${fullpath}/%(id)s.%(ext)s' --write-sub --skip-download --write-info-json 'https://youtu.be/${id}' ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''}`;
+                console.log(`下载字幕, 命令: ${cmd_download}`);
+                try {
+                    child_process.execSync(cmd_download); // 执行下载
+                    // 文件前缀
+                    let before = `${fullpath}/${id}`;
+                    // 字幕文件路径
+                    let file = `${before}.${locale}.vtt`; // 下载的字幕一定是vtt格式
+                    console.log('下载的字幕:', file);
+                    let file_convert = `${before}.${locale}.${ext}`; // 要转换的字幕文件
+                    console.log('转换为:', file_convert);
+                    let cmd_ffmpeg = `ffmpeg -i '${file}' '${file_convert}'`;
+                    console.log(`转换字幕, 命令: ${cmd_ffmpeg}`);
+                    // info文件路径
+                    let file_info = `${before}.info.json`;
+                    console.log('info文件:', file_info);
+                    // JSON of info文件
+                    let info = JSON.parse(fs.readFileSync(file_info).toString());
+                    let title = info.title; // 视频标题
+                    console.log('视频标题:', tilte);
+                    let text = fs.readFileSync(file_convert).toString(); // 转换后字幕文件的文本内容
+                    worker_threads.parentPort.postMessage({ // 下载成功
+                        success: true,
+                        title,
+                        text,
+                    });
+                } catch(error) { // 下载过程出错
+                    console.log(error);
+                    worker_threads.parentPort.postMessage({
+                        success: false,
+                    });
+                }
+                break;
+            } // case subtitle end
             case 'parse': {
                 let audios = [], videos = [];
                 let bestAudio = {}, bestVideo = {};

@@ -128,6 +128,7 @@
         function info(code) {
             switch (code) {
                 case 'zh':
+                case 'zh-CN':
                 case 'zh-Hans': return '  (中文-简体)';
                 case 'zh-HK':
                 case 'zh-Hant': return ' (中文-繁體)';
@@ -136,6 +137,8 @@
                 case 'ja-JP': return ' (日本語)';
                 case 'en': return ' (English)';
                 case 'ko': return ' (韓國語)';
+                case 'ru': return ' (русский)';
+                case 'fr': return ' (français)';
             }
             return '';
         }
