@@ -115,7 +115,7 @@ function main() {
         let { id, locale, ext, type } = req.body;
 
         if (!id.match(/^[\w-]{11}$/) ||
-            !ext.match(/^(srt|ass|vtt|lrc)$/) ||
+            !ext.match(/^.(srt|ass|vtt|lrc)$/) ||
             !type.match(/^(auto|native)$/) ||
             !locale.match(/^([a-z]{2}(-[a-zA-Z]{2,4})?)+$/) ||
             false
