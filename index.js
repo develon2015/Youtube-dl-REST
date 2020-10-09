@@ -265,7 +265,7 @@ function task() {
                     // 字幕文件路径
                     let file = `${before}.${locale}.vtt`; // 下载的字幕一定是vtt格式
                     console.log('下载的字幕:', file);
-                    let file_convert = `${before}.${locale}.${ext}`; // 要转换的字幕文件
+                    let file_convert = `${before}.${locale}${ext}`; // 要转换的字幕文件
                     console.log('转换为:', file_convert);
                     let cmd_ffmpeg = `ffmpeg -i '${file}' '${file_convert}'`;
                     console.log(`转换字幕, 命令: ${cmd_ffmpeg}`);
@@ -275,7 +275,7 @@ function task() {
                     // JSON of info文件
                     let info = JSON.parse(fs.readFileSync(file_info).toString());
                     let title = info.title; // 视频标题
-                    console.log('视频标题:', tilte);
+                    console.log('视频标题:', title);
                     let text = fs.readFileSync(file_convert).toString(); // 转换后字幕文件的文本内容
                     worker_threads.parentPort.postMessage({ // 下载成功
                         success: true,
