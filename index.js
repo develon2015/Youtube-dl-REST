@@ -113,11 +113,14 @@ function main() {
         // checkDisk(); // 下载字幕前先检查磁盘空间
         let thread = new worker_threads.Worker(__filename); // 启动子线程
         thread.once('message', msg => {
+            let { title, filename, text } = msg;
             // 下载字幕成功或失败
             if (msg.success) {
                 console.log('字幕下载成功');
+                res.send({ success: true, title, filename, text });
             } else {
                 console.log('字幕下载失败');
+                res.send({ success: false });
             }
         });
         thread.postMessage({ op: 'subtitle', id, locale, ext, type });
@@ -255,8 +258,11 @@ function task() {
                 let { id, locale, ext, type } = msg;
                 // 先下载字幕
                 let fullpath = `${__dirname}/tmp/${id}`; // 字幕工作路径
-                let cmd_download = `youtube-dl --sub-lang '${locale}' -o '${fullpath}/%(id)s.%(ext)s' --write-sub --skip-download --write-info-json 'https://youtu.be/${id}' ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''}`;
-                // 切换翻译通道
+                let cmd_download = '';
+                if (type === 'native') // 原生字幕
+                    cmd_download = `youtube-dl --sub-lang '${locale}' -o '${fullpath}/%(id)s.%(ext)s' --write-sub --skip-download --write-info-json 'https://youtu.be/${id}' ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''}`;
+                else if (type === 'auto') // 切换翻译通道
+                    cmd_download = `youtube-dl --sub-lang '${locale}' -o '${fullpath}/%(id)s.%(ext)s' --write-auto-sub --skip-download --write-info-json 'https://youtu.be/${id}' ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''}`;
                 console.log(`下载字幕, 命令: ${cmd_download}`);
                 try {
                     child_process.execSync(cmd_download); // 执行下载
@@ -269,6 +275,7 @@ function task() {
                     console.log('转换为:', file_convert);
                     let cmd_ffmpeg = `ffmpeg -i '${file}' '${file_convert}'`;
                     console.log(`转换字幕, 命令: ${cmd_ffmpeg}`);
+                    child_process.execSync(cmd_ffmpeg);
                     // info文件路径
                     let file_info = `${before}.info.json`;
                     console.log('info文件:', file_info);
@@ -279,15 +286,16 @@ function task() {
                     let text = fs.readFileSync(file_convert).toString(); // 转换后字幕文件的文本内容
                     worker_threads.parentPort.postMessage({ // 下载成功
                         success: true,
-                        title,
-                        text,
+                        title, // 返回标题
+                        filename: `${title}.${locale}${ext}`, // 建议文件名
+                        text, // 字幕文本
                     });
                 } catch(error) { // 下载过程出错
                     console.log(error);
-                    worker_threads.parentPort.postMessage({
-                        success: false,
-                    });
                 }
+                worker_threads.parentPort.postMessage({
+                    success: false,
+                });
                 break;
             } // case subtitle end
             case 'parse': {
