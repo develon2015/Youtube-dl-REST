@@ -72,8 +72,9 @@
 
 <!-- 自动化测试 -->
 <script>
-    window.test = true;
-    // test = false;
+    window.test = true; // 测试开关
+    test = false;
+    window.sub_type = 'native'; // 字幕类型
     $(() => {
         if (!!!test) return;
         url.value = 'https://www.youtube.com/watch?v=XXX';
@@ -129,7 +130,7 @@
             switch (code) {
                 case 'zh':
                 case 'zh-CN':
-                case 'zh-Hans': return '  (中文-简体)';
+                case 'zh-Hans': return ' (中文-简体)';
                 case 'zh-HK':
                 case 'zh-Hant': return ' (中文-繁體)';
                 case 'zh-TW': return ' (中文-台灣)';
@@ -186,13 +187,13 @@
             var r = res.available.subs[i]; // 语种
             if (r === 'auto') continue; // 忽略自动字幕
             let row = $(`<tr>
-                <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="checkbox" style="height: 20px"></td>
+                <td><input class="td" id="video${ r.id }" value="${ r }" name="nativeSub" type="checkbox" style="height: 20px"></td>
                 <td>${r}${info(r)}</td>
                 <td style="user-select: none;">
                     ${
                         (() => {
                             return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
-                                return html + `<a target="_blank" href="javascript: void close();" onclick="downloadOutSub('${r}', '${crt}', 'native')">${crt}</a><span>&nbsp;&nbsp;</span>`;
+                                return html + `<a target="_blank" href="javascript: void(0);" onclick="downloadOutSub('${r}', '${crt}', 'native')">${crt}</a><span>&nbsp;&nbsp;</span>`;
                             }, "<span>&nbsp;&nbsp;</span>");
                         })()
                     }
@@ -206,27 +207,28 @@
             $('#title_subs').html('该视频沒有任何字幕').show();
             $('#subs').hide(); // 隐藏表格
         } else { // 有字幕, 可以翻译
+            $('#native_subs').show(); // 显示原生字幕列表
+            $('#auto_subs').hide(); // 隐藏翻译字幕列表
+            window.sub_type = 'native'; // 每次解析都切换为首选原生字幕
             if (res.available.subs.length === 1 && res.available.subs[0] === 'auto') { // 仅有自动字幕
                 $('#title_subs').html('该视频没有原生字幕, 但可翻译并下载自动字幕').show();
                 $('#subs').show(); // 显示表格
             } else { // 有至少一种原生字幕
                 $('#title_subs').html('该视频可下载原生字幕, 也可进行翻译').show();
                 $('#subs').show(); // 显示表格
-                $('#native_subs').show();
-                $('#auto_subs').hide();
             }
 
             // 自动翻译
             let list_lang = ['zh-Hans', 'zh-Hant', 'en', 'ja', 'ko']; // 预设语种
             list_lang.forEach(lang => {
                 row = $(`<tr>
-                    <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="checkbox" style="height: 20px"></td>
+                    <td><input class="td" id="video${ r.id }" value="${ lang }" name="autoSub" type="checkbox" style="height: 20px"></td>
                     <td>${lang}${info(lang)}</td>
                     <td style="user-select: none;">
                         ${
                             (() => {
                                 return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
-                                    return html + `<a target="_blank" href="javascript: void close();" onclick="downloadOutSub('${lang}', '${crt}', 'auto')">${crt}</a><span>&nbsp;&nbsp;</span>`;
+                                    return html + `<a target="_blank" href="javascript: void(0);" onclick="downloadOutSub('${lang}', '${crt}', 'auto')">${crt}</a><span>&nbsp;&nbsp;</span>`;
                                 }, "<span>&nbsp;&nbsp;</span>");
                             })()
                         }
@@ -295,7 +297,7 @@
                         break;
                     }
                 }
-                onaji.result.available.subs = ['en', 'zh-Hans'];
+                // onaji.result.available.subs = ['en', 'zh-Hans'];
                 if (!!test) return this.success(onaji);
                 if (!!test) return this.success({
                     "success": true, "result": {
@@ -342,12 +344,16 @@
                     var vid = null
                     var aid = null
                     var recode = "auto"
-                    for (var i = 0; i < inputs.length; i ++ ) {
-                        if (inputs[i].name === "selectedVideo") vid = inputs[i].value
-                        if (inputs[i].name === "selectedAudio") aid = inputs[i].value
-                        if (inputs[i].name === "recode") recode = inputs[i].value
-                    }
-                    uri = recode_uri + `&format=${ vid }x${ aid }`
+                    var subs = []; // 字幕列表
+                    inputs.each((index, el) => {
+                        if (el.name === "selectedVideo") vid = el.value
+                        if (el.name === "selectedAudio") aid = el.value
+                        if (el.name === "recode") recode = el.value
+                        // 字幕
+                        if (window.sub_type === 'native' && el.name === 'nativeSub') subs.push(el.value);
+                        if (window.sub_type === 'auto' && el.name === 'autoSub') subs.push(el.value);
+                    });
+                    uri = recode_uri + `&format=${ vid }x${ aid }&subs=${subs.join(',')}`
                     if (recode !== "auto") uri += `&recode=${ recode }`
                     console.log(`正在请求${ uri }`)
                     postDownload(uri)
@@ -460,7 +466,7 @@
         <div id="subs" style="padding-top: 20px;">
             <div id="native_subs">
                 <div id="title_subs">原生字幕</div>
-                <div class="btn-google-sub" onclick="$('#native_subs').toggle(); $('#auto_subs').toggle();">谷歌翻译字幕</div>
+                <div class="btn-google-sub" onclick="$('#native_subs').toggle(); $('#auto_subs').toggle(); window.sub_type = 'auto';">谷歌翻译字幕</div>
                 <table id="table_native_subs">
                     <tr>
                         <th>选中</td>
@@ -473,7 +479,7 @@
             <!-- 不主动展示翻译字幕 -->
             <div id="auto_subs" style="display: none;">
                 <div id="title_subs">翻译字幕</div>
-                <div class="btn-google-sub" onclick="$('#native_subs').toggle(); $('#auto_subs').toggle();">切换原生字幕</div>
+                <div class="btn-google-sub" onclick="$('#native_subs').toggle(); $('#auto_subs').toggle(); window.sub_type = 'native';">切换原生字幕</div>
                 <table id="table_auto_subs">
                     <tr>
                         <th>选中</td>
