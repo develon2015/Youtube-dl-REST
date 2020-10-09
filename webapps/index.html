@@ -168,6 +168,11 @@
                 }),
                 success(resp) { // 字幕请求成功
                     console.log(resp);
+                    let { title, filename, text } = resp;
+                    let a = document.createElement('a');
+                    a.download = filename;
+                    a.href = `data: application/octet-stream; utf-8,${text}`;
+                    a.click();
                 },
                 error(resp) { // 失败
                     console.log(resp);
@@ -187,7 +192,7 @@
                     ${
                         (() => {
                             return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
-                                return html + `<a target="_blank" href="javascript: void(0)" onclick="downloadOutSub('${r}', '${crt}', 'native')">${crt}</a><span>&nbsp;&nbsp;</span>`;
+                                return html + `<a target="_blank" href="javascript: void close();" onclick="downloadOutSub('${r}', '${crt}', 'native')">${crt}</a><span>&nbsp;&nbsp;</span>`;
                             }, "<span>&nbsp;&nbsp;</span>");
                         })()
                     }
@@ -221,7 +226,7 @@
                         ${
                             (() => {
                                 return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
-                                    return html + `<a target="_blank" href="javascript: void(0)" onclick="downloadOutSub('${lang}', '${crt}', 'auto')">${crt}</a><span>&nbsp;&nbsp;</span>`;
+                                    return html + `<a target="_blank" href="javascript: void close();" onclick="downloadOutSub('${lang}', '${crt}', 'auto')">${crt}</a><span>&nbsp;&nbsp;</span>`;
                                 }, "<span>&nbsp;&nbsp;</span>");
                             })()
                         }
@@ -314,6 +319,7 @@
             }
         })
         Develon.notifyWait("正在解析, 请稍等", fun => {
+            title();
             parseRequest.abort()
             return true
         })

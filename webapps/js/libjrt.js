@@ -1,5 +1,9 @@
 // library with jQuery
-
+/** 修改文档标题 */
+function title(msg) {
+    if (msg == undefined) title(window.defaultTitle || '');
+    $('title').text(msg);
+}
 // Creating a namespace for Develon
 (fun => {
     Develon = window.Develon || {
@@ -51,6 +55,7 @@
             }
 
             ui.setDefaultTitle = fun => {
+                window.defaultTitle = fun;
                 if ($('title')[0] === undefined) {
                     $('<title>' + fun + '</title>').appendTo($('head'))
                 }
@@ -74,11 +79,13 @@
         },
 
         removeNotify: id => {
+            title();
             $(document.body)[0].removeChild($('div#notify' + id)[0])
         },
 
         notifyID: 1,
         notify: function (msg, callback) {
+            title(msg);
             var id = this.notifyID ++
             $('<div id="notify' + id + '" style="position: fixed; top: 0px; left: 0px; right: 0px; bottom: 0px; background-color: rgba(0, 0, 0, 0.75); z-index: 999999999;">\
                 <div style="width: 270px; max-width: 90%; font-size: 16px; text-align: center; background-color: rgb(255, 255, 255); border-radius: 15px; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);">\
@@ -104,6 +111,7 @@
         },
 
         notifyWait: function (msg, callback) {
+            title(msg);
             var id = this.notifyID ++
             $('<div id="notify' + id + '" style="position: fixed; top: 0px; left: 0px; right: 0px; bottom: 0px; background-color: rgba(0, 0, 0, 0.75); z-index: 999999999;">\
                 <div style="width: 270px; max-width: 90%; font-size: 16px; text-align: center; background-color: rgb(255, 255, 255); border-radius: 15px; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);">\
