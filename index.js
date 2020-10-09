@@ -120,7 +120,7 @@ function main() {
                 console.log('字幕下载失败');
             }
         });
-        thread.postMessage({ op: 'subtitle', id, ext, type });
+        thread.postMessage({ op: 'subtitle', id, locale, ext, type });
     }); // /youtube/subtitle end
 
     app.listen(config.port, config.address, () => {
