@@ -143,7 +143,7 @@
             return '';
         }
 
-        window.downloadOutSub = (/** 字幕后缀 */ ext, /** 原生字幕: 'native', 翻译字幕: 'auto' */ type) => { // 绑定下载外挂字幕事件
+        window.downloadOutSub = (/** 语种 */ locale, /** 字幕后缀 */ ext, /** 原生字幕: 'native', 翻译字幕: 'auto' */ type) => { // 绑定下载外挂字幕事件
             if (false) { // 模拟保存文件
                 $.ajax('/asfd', {
                     error() {
@@ -158,13 +158,14 @@
             }
             $.ajax('/youtube/subtitle', {
                 method: 'post',
-                dataType: 'application/json',
-                accepts: ['application/json'],
-                data: {
+                contentType: 'application/json',
+                accepts: 'application/json',
+                data: JSON.stringify({
                     id: res.v, // 字幕对应视频的ID
+                    locale, // 字幕语种
                     ext, // 字幕格式
                     type, // 原生或翻译字幕
-                },
+                }),
                 success(resp) { // 字幕请求成功
                     console.log(resp);
                 },
@@ -177,7 +178,7 @@
 
         // 原生字幕
         for (var i = 0; i < res.available.subs.length; i ++ ) {
-            var r = res.available.subs[i];
+            var r = res.available.subs[i]; // 语种
             if (r === 'auto') continue; // 忽略自动字幕
             let row = $(`<tr>
                 <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="checkbox" style="height: 20px"></td>
@@ -186,7 +187,7 @@
                     ${
                         (() => {
                             return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
-                                return html + `<a target="_blank" href="javascript: void(0)" onclick="downloadOutSub('${crt}', 'native')">${crt}</a><span>&nbsp;&nbsp;</span>`;
+                                return html + `<a target="_blank" href="javascript: void(0)" onclick="downloadOutSub('${r}', '${crt}', 'native')">${crt}</a><span>&nbsp;&nbsp;</span>`;
                             }, "<span>&nbsp;&nbsp;</span>");
                         })()
                     }
@@ -211,20 +212,23 @@
             }
 
             // 自动翻译
-            row = $(`<tr>
-                <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="checkbox" style="height: 20px"></td>
-                <td>中文简体</td>
-                <td style="user-select: none;">
-                    ${
-                        (() => {
-                            return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
-                                return html + `<a target="_blank" href="javascript: void(0)" onclick="downloadOutSub('${crt}', 'auto')">${crt}</a><span>&nbsp;&nbsp;</span>`;
-                            }, "<span>&nbsp;&nbsp;</span>");
-                        })()
-                    }
-                </td>
-            </tr>`);
-            row.appendTo("#table_auto_subs");
+            let list_lang = ['zh-Hans', 'zh-Hant', 'en', 'ja', 'ko']; // 预设语种
+            list_lang.forEach(lang => {
+                row = $(`<tr>
+                    <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="checkbox" style="height: 20px"></td>
+                    <td>${lang}${info(lang)}</td>
+                    <td style="user-select: none;">
+                        ${
+                            (() => {
+                                return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
+                                    return html + `<a target="_blank" href="javascript: void(0)" onclick="downloadOutSub('${lang}', '${crt}', 'auto')">${crt}</a><span>&nbsp;&nbsp;</span>`;
+                                }, "<span>&nbsp;&nbsp;</span>");
+                            })()
+                        }
+                    </td>
+                </tr>`);
+                row.appendTo("#table_auto_subs");
+            });
         }
 
         // Display解析结果

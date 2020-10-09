@@ -109,15 +109,15 @@ function main() {
     // API: 下载字幕
     app.use(json());
     app.post('/youtube/subtitle', (req, res) => {
-        let { id, ext, type } = req.data;
+        let { id, locale, ext, type } = req.body;
         // checkDisk(); // 下载字幕前先检查磁盘空间
         let thread = new worker_threads.Worker(__filename); // 启动子线程
         thread.once('message', msg => {
             // 下载字幕成功或失败
             if (msg.success) {
-                console.log('字幕下载失败');
-            } else {
                 console.log('字幕下载成功');
+            } else {
+                console.log('字幕下载失败');
             }
         });
         thread.postMessage({ op: 'subtitle', id, ext, type });
@@ -251,10 +251,12 @@ function task() {
     worker_threads.parentPort.once('message', msg => {
         switch (msg.op) {
             case 'subtitle': {
-                let { id, ext, type: locale } = msg;
+                console.log(msg);
+                let { id, locale, ext, type } = msg;
                 // 先下载字幕
                 let fullpath = `${__dirname}/tmp/${id}`; // 字幕工作路径
                 let cmd_download = `youtube-dl -o '${fullpath}/%(id)s.%(ext)s' --write-sub --skip-download --write-info-json 'https://youtu.be/${id}' ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''}`;
+                // 切换翻译通道
                 console.log(`下载字幕, 命令: ${cmd_download}`);
                 try {
                     child_process.execSync(cmd_download); // 执行下载
