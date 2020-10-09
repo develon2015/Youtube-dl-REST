@@ -255,7 +255,7 @@ function task() {
                 let { id, locale, ext, type } = msg;
                 // 先下载字幕
                 let fullpath = `${__dirname}/tmp/${id}`; // 字幕工作路径
-                let cmd_download = `youtube-dl -o '${fullpath}/%(id)s.%(ext)s' --write-sub --skip-download --write-info-json 'https://youtu.be/${id}' ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''}`;
+                let cmd_download = `youtube-dl --sub-lang '${locale}' -o '${fullpath}/%(id)s.%(ext)s' --write-sub --skip-download --write-info-json 'https://youtu.be/${id}' ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''}`;
                 // 切换翻译通道
                 console.log(`下载字幕, 命令: ${cmd_download}`);
                 try {
