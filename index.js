@@ -44,8 +44,9 @@ function main() {
     app.use('/file', express.static(`${__dirname}/tmp`));
     app.use('/info', express.static(`${__dirname}/tmp`));
 
-    app.get('/youtube/parse', (req, res) => {
+    app.get('/y2b/parse', (req, res) => {
         let url = req._parsedUrl.query;
+        url = decodeURIComponent(url.replace('y2b', 'youtube').replace('y2', 'youtu')); // "链接已重置"大套餐
         console.log({ op: '解析', url });
 
         let mr = url.match(/^https?:\/\/(?:youtu.be\/|(?:www|m).youtube.com\/watch\?v=)([\w-]{11})$/);
@@ -68,7 +69,7 @@ function main() {
     });
 
     let queue = [];
-    app.get('/youtube/download', (req, res) => {
+    app.get('/y2b/download', (req, res) => {
         let { v, format, recode, subs } = req.query;
         if (!!!v.match(/^[\w-]{11}$/))
             return res.send({ "error": "Qurey参数v错误: 请提供一个正确的Video ID", "success": false });
@@ -111,7 +112,7 @@ function main() {
 
     // API: 下载字幕
     app.use(json());
-    app.post('/youtube/subtitle', (req, res) => {
+    app.post('/y2b/subtitle', (req, res) => {
         let { id, locale, ext, type } = req.body;
 
         if (!id.match(/^[\w-]{11}$/) ||
