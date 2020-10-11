@@ -170,11 +170,13 @@
             let win_div = win.document.getElementById('wait_subtitle');
             win_div.innerHTML = window.wait_subtitle.innerHTML;
             win.onmessage = function (event) { // 监听新标签页消息事件
-                if (event.data === false) {
-                    event.target.alert('下载失败!');
-                } else if(event.data === true) {
-                    event.target.getElementById('info').innerText = '请保存文件';
-                }
+                try {
+                    if (event.data === false) {
+                        event.target.alert('下载失败!');
+                    } else if (event.data === true) {
+                        event.target.document.getElementById('info').innerText = '请保存文件';
+                    }
+                } catch (error) { }
                 event.target.close(); // 落日荒秋, 零星白骨
             };
 

@@ -80,7 +80,7 @@ function main() {
         if (config.mode === '演示模式' && !!recode)
             return res.send({ "error": "演示模式，关闭转码功能<br>本项目已使用Node.js重写<br>请克隆本项目后自行部署", "success": false });
 
-        if (subs !== '' && !subs.match(/^([a-z]{2}(-[a-zA-Z]{2,4})?,?)+$/))
+        if (subs && subs !== '' && !subs.match(/^([a-z]{2}(-[a-zA-Z]{2,4})?,?)+$/))
             return res.send({ "error": "字幕不正确!", "success": false });
 
         if (queue[JSON.stringify(req.query)] === undefined) {
@@ -200,13 +200,10 @@ function catchSubtitle(line) {
  * @param {{ op: 'parse', url: String, videoID: String }} msg 
  */
 function parseSubtitle(msg) {
-    let cmd = `youtube-dl --list-subs "${msg.url}"`;
-    console.log(`解析字幕, 命令: ${cmd}`);
     try {
-        let rs = child_process.execSync(
-            `youtube-dl --list-subs ${config.cookie !== undefined ? `--cookies "${config.cookie}"` : ''} '${msg.url}' 2> /dev/null`
-        ).toString()
-            .split(/(\r\n|\n)/);
+        let cmd = `youtube-dl --list-subs ${config.cookie !== undefined ? `--cookies "${config.cookie}"` : ''} '${msg.url}' 2> /dev/null`
+        console.log(`解析字幕, 命令: ${cmd}`);
+        let rs = child_process.execSync(cmd).toString().split(/(\r\n|\n)/);
 
         /** 是否没有自动字幕 */
         let noAutoSub = true;
