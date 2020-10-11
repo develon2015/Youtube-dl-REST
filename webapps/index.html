@@ -101,7 +101,7 @@
             var r = res.available.audios[i]
             row = $(`<tr>
                 <td><input class="td" id="audio${ r.id }" value="${ r.id }" name="selectedAudio" type="radio" style="height: 20px"></td>
-                <td><a href="javascript: void(0)" onclick="window.download('/youtube/download?v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
+                <td><a href="javascript: void(0)" onclick="window.download('/y2b/download?v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
                 <td>${ r.format }</td>
                 <td>${ r.rate }</td>
                 <td>${ r.size }</td>
@@ -117,7 +117,7 @@
             var r = res.available.videos[i]
             row = $(`<tr>
                 <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="radio" style="height: 20px"></td>
-                <td><a href="javascript: void(0)" onclick="window.download('/youtube/download?v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
+                <td><a href="javascript: void(0)" onclick="window.download('/y2b/download?v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
                 <td>${ r.format }</td>
                 <td>${ r.scale }</td>
                 <td>${ r.rate }</td>
@@ -179,7 +179,7 @@
             };
 
             // 请求字幕
-            $.ajax('/youtube/subtitle', {
+            $.ajax('/y2b/subtitle', {
                 method: 'post',
                 contentType: 'application/json',
                 accepts: 'application/json',
@@ -266,7 +266,7 @@
         $("#divResult").fadeIn()
 
         $("span#recode").bind("click", fun => {
-            download(null, `/youtube/download?v=${ res.v }`) // got v, select a, v format & recode ($("table input:checked"))
+            download(null, `/y2b/download?v=${ res.v }`) // got v, select a, v format & recode ($("table input:checked"))
         })
     }
 
@@ -275,7 +275,7 @@
         var url = $('input#url')[0].value
         var id = Develon.notifyID // 获取即将弹出的通知框ID
         var parseRequest = $.ajax({
-            url: "/youtube/parse?" + url,
+            url: "/y2b/parse?" + encodeURIComponent(url.replace('youtube', 'y2b').replace('youtu', 'y2')),
             success: fun => {
                 if (fun.success === false) {
                     Develon.notify(fun.error)
