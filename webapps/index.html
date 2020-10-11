@@ -63,6 +63,10 @@
         color: white;
         background: black;
     }
+
+    #wait_subtitle {
+        display: none;
+    }
 </style>
 
 <!-- <script src="js/loadbar.js"></script> -->
@@ -144,7 +148,8 @@
             return '';
         }
 
-        window.downloadOutSub = (/** 语种 */ locale, /** 字幕后缀 */ ext, /** 原生字幕: 'native', 翻译字幕: 'auto' */ type) => { // 绑定下载外挂字幕事件
+        // 绑定下载外挂字幕事件
+        window.downloadOutSub = (/** 语种 */ locale, /** 字幕后缀 */ ext, /** 原生字幕: 'native', 翻译字幕: 'auto' */ type) => {
             if (false) { // 模拟保存文件
                 $.ajax('/asfd', {
                     error() {
@@ -157,6 +162,23 @@
                     }
                 });
             }
+
+            // 显示字幕下载标签页
+            let win = window.open(undefined);
+            win.document.title = `下载字幕`;
+            win.document.body.appendChild(window.wait_subtitle.cloneNode()); // 移花接木之术
+            let win_div = win.document.getElementById('wait_subtitle');
+            win_div.innerHTML = window.wait_subtitle.innerHTML;
+            win.onmessage = function (event) { // 监听新标签页消息事件
+                if (event.data === false) {
+                    event.target.alert('下载失败!');
+                } else if(event.data === true) {
+                    event.target.getElementById('info').innerText = '请保存文件';
+                }
+                event.target.close(); // 落日荒秋, 零星白骨
+            };
+
+            // 请求字幕
             $.ajax('/youtube/subtitle', {
                 method: 'post',
                 contentType: 'application/json',
@@ -174,12 +196,13 @@
                     a.download = filename;
                     a.href = `data: application/octet-stream; utf-8,${text}`;
                     a.click();
+                    win.postMessage(true);
                 },
                 error(resp) { // 失败
                     console.log(resp);
-                    alert('下载失败!');
+                    win.postMessage(false);
                 },
-            });
+            }); // ajax end
         };
 
         // 原生字幕
@@ -193,7 +216,7 @@
                     ${
                         (() => {
                             return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
-                                return html + `<a target="_blank" href="javascript: void(0);" onclick="downloadOutSub('${r}', '${crt}', 'native')">${crt}</a><span>&nbsp;&nbsp;</span>`;
+                                return html + `<a href="javascript: void(0);" onclick="downloadOutSub('${r}', '${crt}', 'native')">${crt}</a><span>&nbsp;&nbsp;</span>`;
                             }, "<span>&nbsp;&nbsp;</span>");
                         })()
                     }
@@ -228,7 +251,7 @@
                         ${
                             (() => {
                                 return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
-                                    return html + `<a target="_blank" href="javascript: void(0);" onclick="downloadOutSub('${lang}', '${crt}', 'auto')">${crt}</a><span>&nbsp;&nbsp;</span>`;
+                                    return html + `<a href="javascript: void(0);" onclick="downloadOutSub('${lang}', '${crt}', 'auto')">${crt}</a><span>&nbsp;&nbsp;</span>`;
                                 }, "<span>&nbsp;&nbsp;</span>");
                             })()
                         }
@@ -274,7 +297,6 @@
                         }
                     }
                 };
-                console.log(i);
                 switch (i) {
                     case 1: {
                         console.log('没有字幕');
@@ -500,6 +522,10 @@
     	<p>1：支持下载外挂字幕文件</p>
     	<p>2: 请按Ctrl+Shift+R强制刷新缓存</p>
     	<p>✩ &nbsp;&nbsp;您的Star和Fork是对开发者最大的支持！</p>
+    </div>
+
+    <div id="wait_subtitle" style="font-family: 'MicroSoft JhengHei'; position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);">
+        <h1 id="info" style="color: mediumaquamarine;">服务器正在处理...</h1>
     </div>
 </body>
 
