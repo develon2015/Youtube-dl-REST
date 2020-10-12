@@ -32,7 +32,16 @@ function main() {
         if (!isBlackIP) next();
     });
     app.use('/', express.static(`${__dirname}/webapps`));
-    app.use('/file', (req, res, next) => {
+    // app.use('/bili_file', (req, res, next) => {
+    //     console.log(`下载${req.url}`);
+    //     let info = fs.readFileSync(`${__dirname}/tmp/${req.url.replace(/\.\w+$/, '.info.json')}`).toString();
+    //     info = JSON.parse(info);
+    //     console.log({'标题': info.title}); // or 'fulltitle'
+    //     let ext = req.url.match(/.*(\.\w+)$/)[1];
+    //     res.set({'Content-Disposition': `attachment; filename="${encodeURI(info.title + ext)}"; filename*=UTF-8''${encodeURI(info.title + ext)}`});
+    //     next();
+    // });
+     app.use('/file', (req, res, next) => {
         console.log(`下载${req.url}`);
         let info = fs.readFileSync(`${__dirname}/tmp/${req.url.replace(/\.\w+$/, '.info.json')}`).toString();
         info = JSON.parse(info);
@@ -92,6 +101,43 @@ function main() {
     });
 
     let queue = [];
+    app.get('/bili/download', (req, res) => {
+        let { url } = req.query;
+        url = decodeURIComponent(url);
+
+        if (!url.match(/^https?:\/\/(www\.|m\.)?bilibili\.com\/video\/[\w\d]{11,14}$/)) { // 检查URL合法性
+            console.log(`不合法的B站视频地址: ${url}`);
+            res.send({
+                "error": 'B站视频URL示例:<br /><br />https://www.bilibili.com/<br />video/BV1xxxxxxxxx',
+                "success": false,
+            });
+        }
+        if (queue[JSON.stringify(req.query)] === undefined) {
+            checkDisk(); // 下载视频前先检查磁盘空间
+
+            queue[JSON.stringify(req.query)] = {
+                "success": true,
+                "result": {
+                    "downloading": true,
+                    "downloadSucceed": false,
+                    "dest": "正在下载中",
+                    "metadata": ""
+                }
+            };
+
+            let thread = new worker_threads.Worker(__filename);
+            thread.once('message', msg => {
+                // 下载成功或失败，更新queue
+                console.log('下载成功或失败，更新queue');
+                console.log(JSON.stringify(msg, null, 1));
+                queue[JSON.stringify(req.query)] = msg;
+            });
+            thread.postMessage({ op: 'bili/download', url });
+        } // if end
+        // 发送轮询结果
+        res.send(queue[JSON.stringify(req.query)]);
+    }); // /bili/download end
+
     app.get('/y2b/download', (req, res) => {
         let { v, format, recode, subs } = req.query;
         if (!!!v.match(/^[\w-]{11}$/))
@@ -333,19 +379,20 @@ function task() {
                 break;
             } // case subtitle end
 
-            case 'bili-parse': {
+            case 'bili/parse': { // 解析, 生成bilibili/{id}/flv.info.json
                 try {
                     let id = msg.url.match(/.*video\/([\w\d]+)$/)[1];
                     let fullpath = `${__dirname}/bilibili/${id}`;
                     // let cmd_write_info = `youtube-dl -o '${fullpath}/%(id)s/flv.%(ext)s' '${msg.url}' --skip-download --write-info`;
                     let cmd_write_info = `youtube-dl -o '${fullpath}/flv.%(ext)s' '${msg.url}' --skip-download --write-info`;
                     let file_info = `${fullpath}/flv.info.json`;
+                    console.log('解析B站视频, 命令:', cmd_write_info);
                     child_process.execSync(cmd_write_info);
                     let info = JSON.parse(fs.readFileSync(file_info).toString());
-                    let { uploader, title, thumbnail, filesize, duration } = info;
+                    let { webpage_url: url, uploader, title, thumbnail, filesize, duration } = info;
                     worker_threads.parentPort.postMessage({
                         success: true,
-                        ...{ uploader, title, thumbnail, filesize, duration },
+                        ...{ url, uploader, title, thumbnail, filesize, duration },
                     });
                 } catch (error) {
                     worker_threads.parentPort.postMessage({
@@ -353,7 +400,8 @@ function task() {
                         error: '解析失败！',
                     });
                 }
-            } // case bili-parse end
+                break;
+            } // case bili/parse end
 
             case 'parse': {
                 let audios = [], videos = [];
@@ -436,6 +484,50 @@ format code  extension  resolution note
                         "available": { audios, videos, subs }
                     }
                 });
+
+                break;
+            }
+
+            case 'bili/download': {
+                try {
+                    let { url } = msg;
+                    let id = msg.url.match(/.*video\/([\w\d]+)$/)[1];
+                    let fullpath = `${__dirname}/bilibili/${id}`;
+                    let cmd_download = `youtube-dl -o '${fullpath}/${id}.%(ext)s' '${url}'`;
+                    console.log('下载B站视频, 命令:', cmd_download);
+                    child_process.execSync(cmd_download);
+                    let dest = 'Unknown dest';
+                    worker_threads.parentPort.postMessage({
+                        "success": true,
+                        "result": {
+                            "v": videoID,
+                            "downloading": false,
+                            "downloadSucceed": true,
+                            "dest": `bili_file/bilibili/${id}/${id}.flv`,
+                            "metadata": '',
+                        },
+                    });
+                } catch (error) {
+                    let cause = 'Unknown cause';
+                    console.log({error});
+                    error.toString().split('\n').forEach(it => {
+                        console.log(it);
+                        let mr = it.match(/^.*(ERROR.*)$/);
+                        if (!!mr) {
+                            cause = mr[1];
+                        }
+                    });
+                    worker_threads.parentPort.postMessage({
+                        "success": true,
+                        "result": {
+                            "v": "demoVideoID",
+                            "downloading": false,
+                            "downloadSucceed": false,
+                            "dest": "下载失败",
+                            "metadata": cause
+                        }
+                    });
+                } // end of try
 
                 break;
             }

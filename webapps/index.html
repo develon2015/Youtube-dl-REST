@@ -57,6 +57,7 @@
         user-select: none;
         padding: 10px 20px;
         background: mediumorchid;
+        color: white;
     }
 
     .btn-google-sub:active {
@@ -77,7 +78,7 @@
 <!-- 自动化测试 -->
 <script>
     window.test = true; // 测试开关
-    test = false;
+    // test = false;
     window.sub_type = 'native'; // 字幕类型
     $(() => {
         let query = new URL(document.location.href).searchParams.get('url');
@@ -522,14 +523,16 @@
         </div>
 
         <div style="padding: 20px 0px">
-            <span id="recode" class="button">合并 / 下载</span>
+            <span id="recode" class="button" style="color: white">合并 / 下载</span>
         </div>
     </div>
 
     <div id="log" class="flex">
     	<p>《更新日志》</p>
     	<p>1：支持下载外挂字幕文件</p>
-    	<p>2: 请按Ctrl+Shift+R强制刷新缓存</p>
+    	<p>2：支持解析BiliBili</p>
+        <p>请按Ctrl+Shift+R强制刷新一下缓存</p>
+        <hr>
     	<p>✩ &nbsp;&nbsp;您的Star和Fork是对开发者最大的支持！</p>
     </div>
 

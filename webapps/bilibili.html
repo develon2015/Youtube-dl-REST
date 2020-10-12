@@ -19,14 +19,16 @@
     }
 
     table th {
-        background-color: #ccc;
+        background-color: #eee;
+        color: mediumseagreen;
         width: 200px;
         padding: 0;
         margin: 0;
     }
 
     table td {
-        background-color: aquamarine;
+        background-color: mediumseagreen;
+        color: white;
         padding: 0;
         margin: 0;
     }
@@ -51,7 +53,7 @@
         font-size: 120%;
     }
 
-    .btn-google-sub {
+    .button {
         display: inline-block;
         cursor: pointer;
         user-select: none;
@@ -59,13 +61,9 @@
         background: mediumorchid;
     }
 
-    .btn-google-sub:active {
+    .button:active {
         color: white;
         background: black;
-    }
-
-    #wait_subtitle {
-        display: none;
     }
 </style>
 
@@ -77,199 +75,40 @@
 <!-- 自动化测试 -->
 <script>
     window.test = true; // 测试开关
-    test = false;
+    // test = false;
     window.sub_type = 'native'; // 字幕类型
     $(() => {
         let query = new URL(document.location.href).searchParams.get('url');
         url.value = query;
         query && document.querySelector('form').submit();
-    })
+    });
 </script>
 
 <script>
     // AJAX完成, 填充表单
-    function fill(res) {
-        $("#divResult td").remove()
-        var tr = $("#divResult tr")
+    function fill(r) {
+        $("#divResult td").remove();
+        var tr = $("#divResult tr");
+        tr.each((index, it) => {
+            if (it.innerHTML.trim() === "") it.remove();
+        });
 
-        tr.each(function () {
-            if (this.innerText.trim() === "")
-                this.remove()
-        })
-
-        for (var i = 0; i < res.available.audios.length; i ++ ) {
-            var r = res.available.audios[i]
-            row = $(`<tr>
-                <td><input class="td" id="audio${ r.id }" value="${ r.id }" name="selectedAudio" type="radio" style="height: 20px"></td>
-                <td><a href="javascript: void(0)" onclick="window.download('/y2b/download?v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
-                <td>${ r.format }</td>
-                <td>${ r.rate }</td>
-                <td>${ r.size }</td>
-                <td>${ r.info }</td>
-            </tr>`)
-            row.appendTo("table#audios")
-            if (r.id === res.best.audio.id) {
-                $(`#audio${ r.id }`).click()
-            }
-        }
-
-        for (var i = 0; i < res.available.videos.length; i ++ ) {
-            var r = res.available.videos[i]
-            row = $(`<tr>
-                <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="radio" style="height: 20px"></td>
-                <td><a href="javascript: void(0)" onclick="window.download('/y2b/download?v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
-                <td>${ r.format }</td>
-                <td>${ r.scale }</td>
-                <td>${ r.rate }</td>
-                <td>${ r.size }</td>
-                <td>${ r.info }</td>
-            </tr>`)
-            row.appendTo("table#videos")
-            if (r.id === res.best.video.id) {
-                $(`#video${ r.id }`).click()
-            }
-        }
-
-        function info(code) {
-            switch (code) {
-                case 'zh':
-                case 'zh-CN':
-                case 'zh-Hans': return ' (中文-简体)';
-                case 'zh-HK':
-                case 'zh-Hant': return ' (中文-繁體)';
-                case 'zh-TW': return ' (中文-台灣)';
-                case 'ja':
-                case 'ja-JP': return ' (日本語)';
-                case 'en': return ' (English)';
-                case 'ko': return ' (韓國語)';
-                case 'ru': return ' (русский)';
-                case 'fr': return ' (français)';
-            }
-            return '';
-        }
-
-        // 绑定下载外挂字幕事件
-        window.downloadOutSub = (/** 语种 */ locale, /** 字幕后缀 */ ext, /** 原生字幕: 'native', 翻译字幕: 'auto' */ type) => {
-            if (false) { // 模拟保存文件
-                $.ajax('/asfd', {
-                    error() {
-                        let a = document.createElement('a');
-                        a.download = '字幕.txt';
-                        a.href = 'data: application/octet-stream; utf-8,Hello,你好';
-                        setTimeout(() => {
-                            a.click();
-                        }, 2000);
-                    }
-                });
-            }
-
-            // 显示字幕下载标签页
-            let win = window.open(undefined);
-            win.document.title = `下载字幕`;
-            win.document.body.appendChild(window.wait_subtitle.cloneNode()); // 移花接木之术
-            let win_div = win.document.getElementById('wait_subtitle');
-            win_div.innerHTML = window.wait_subtitle.innerHTML;
-            win.onmessage = function (event) { // 监听新标签页消息事件
-                try {
-                    if (event.data === false) {
-                        event.target.alert('下载失败!');
-                    } else if (event.data === true) {
-                        event.target.document.getElementById('info').innerText = '请保存文件';
-                    }
-                } catch (error) { }
-                event.target.close(); // 落日荒秋, 零星白骨
-            };
-
-            // 请求字幕
-            $.ajax('/y2b/subtitle', {
-                method: 'post',
-                contentType: 'application/json',
-                accepts: 'application/json',
-                data: JSON.stringify({
-                    id: res.v, // 字幕对应视频的ID
-                    locale, // 字幕语种
-                    ext, // 字幕格式
-                    type, // 原生或翻译字幕
-                }),
-                success(resp) { // 字幕请求成功
-                    console.log(resp);
-                    let { title, filename, text } = resp;
-                    let a = document.createElement('a');
-                    a.download = filename;
-                    a.href = `data: application/octet-stream; utf-8,${text}`;
-                    a.click();
-                    win.postMessage(true);
-                },
-                error(resp) { // 失败
-                    console.log(resp);
-                    win.postMessage(false);
-                },
-            }); // ajax end
-        };
-
-        // 原生字幕
-        for (var i = 0; i < res.available.subs.length; i ++ ) {
-            var r = res.available.subs[i]; // 语种
-            if (r === 'auto') continue; // 忽略自动字幕
-            let row = $(`<tr>
-                <td><input disabled title="暂不支持内封, 请下载外挂字幕" class="td" id="video${ r.id }" value="${ r }" name="nativeSub" type="checkbox" style="height: 20px"></td>
-                <td>${r}${info(r)}</td>
-                <td style="user-select: none;">
-                    ${
-                        (() => {
-                            return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
-                                return html + `<a href="javascript: void(0);" onclick="downloadOutSub('${r}', '${crt}', 'native')">${crt}</a><span>&nbsp;&nbsp;</span>`;
-                            }, "<span>&nbsp;&nbsp;</span>");
-                        })()
-                    }
-                </td>
-            </tr>`);
-            row.appendTo("#table_native_subs");
-        } // 字幕end
-        
-        // 字幕相关UI逻辑
-        if (res.available.subs.length === 0) { // 没有字幕
-            $('#title_subs').html('该视频沒有任何字幕').show();
-            $('#subs').hide(); // 隐藏表格
-        } else { // 有字幕, 可以翻译
-            $('#native_subs').show(); // 显示原生字幕列表
-            $('#auto_subs').hide(); // 隐藏翻译字幕列表
-            window.sub_type = 'native'; // 每次解析都切换为首选原生字幕
-            if (res.available.subs.length === 1 && res.available.subs[0] === 'auto') { // 仅有自动字幕
-                $('#title_subs').html('该视频没有原生字幕, 但可翻译并下载自动字幕').show();
-                $('#subs').show(); // 显示表格
-            } else { // 有至少一种原生字幕
-                $('#title_subs').html('该视频可下载原生字幕, 也可进行翻译').show();
-                $('#subs').show(); // 显示表格
-            }
-
-            // 自动翻译
-            let list_lang = ['zh-Hans', 'zh-Hant', 'en', 'ja', 'ko']; // 预设语种
-            list_lang.forEach(lang => {
-                row = $(`<tr>
-                    <td><input disabled title="暂不支持内封, 请下载外挂字幕" class="td" id="video${ r.id }" value="${ lang }" name="autoSub" type="checkbox" style="height: 20px"></td>
-                    <td>${lang}${info(lang)}</td>
-                    <td style="user-select: none;">
-                        ${
-                            (() => {
-                                return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
-                                    return html + `<a href="javascript: void(0);" onclick="downloadOutSub('${lang}', '${crt}', 'auto')">${crt}</a><span>&nbsp;&nbsp;</span>`;
-                                }, "<span>&nbsp;&nbsp;</span>");
-                            })()
-                        }
-                    </td>
-                </tr>`);
-                row.appendTo("#table_auto_subs");
-            });
-        }
-
+        let row = $(
+            `<tr asd>
+                <td>${ r.uploader }</td>
+                <td>${ r.title }</td>
+                <td>${ (r.filesize / 1024 / 1024).toFixed(2) } MB</td>
+                <td>${ r.duration } 秒</td>
+            </tr>`
+        );
+        row.appendTo("table#info");
         // Display解析结果
         //$("#divResult").css("display", "block")
-        $("#divResult").fadeIn()
+        $("#divResult").fadeIn();
 
         $("span#recode").bind("click", fun => {
-            download(null, `/y2b/download?v=${ res.v }`) // got v, select a, v format & recode ($("table input:checked"))
-        })
+            postDownload(`/bili/download?url=${ encodeURIComponent(r.url) }`);
+        });
     }
 
     parse = fun => {
@@ -297,54 +136,11 @@
                 }
                 // Develon.notify("解析完成")
                 Develon.removeNotify(id)
-                fill(fun.result)
+                fill(fun)
             },
             error(event) {
-                let i = Math.round(Math.random() * 3);
-                let onaji = {
-                    "success": true, "result": {
-                        "v": "xxx", "best": { "audio": { "id": "251", "format": "webm", "rate": "141", "info": "opus @160k (48000Hz)", "size": "3.63" }, "video": { "id": "137", "format": "mp4", "scale": "1920x1080", "frame": "1080", "rate": "4502", "info": "avc1.640028, 30fps", "size": "104.05" } },
-                        "available": {
-                            "audios": [{ "id": "249", "format": "webm", "rate": "57", "info": "opus @ 50k (48000Hz)", "size": "1.40" }, { "id": "250", "format": "webm", "rate": "74", "info": "opus @ 70k (48000Hz)", "size": "1.85" }],
-                            "videos": [{ "id": "394", "format": "mp4", "scale": "256x144", "frame": "144", "rate": "80", "info": "av01.0.00M.08, 30fps", "size": "1.97" }],
-                        }
-                    }
-                };
-                switch (i) {
-                    case 1: {
-                        console.log('没有字幕');
-                        onaji.result.available.subs = [];
-                        break;
-                    }
-                    case 2: {
-                        console.log('一个原生一个自动');
-                        onaji.result.available.subs = ['auto', 'ja'];
-                        break;
-                    }
-                    case 0: {
-                        console.log('两个原生');
-                        onaji.result.available.subs = ['en', 'zh-Hans'];
-                        break;
-                    }
-                    case 3: {
-                        console.log('一个自动');
-                        onaji.result.available.subs = ['auto'];
-                        break;
-                    }
-                }
-                // onaji.result.available.subs = ['en', 'zh-Hans'];
-                if (!!test) return this.success(onaji);
                 if (!!test) return this.success({
-                    "success": true, "result": {
-                        "v": "xxx", "best": { "audio": { "id": "251", "format": "webm", "rate": "141", "info": "opus @160k (48000Hz)", "size": "3.63" }, "video": { "id": "137", "format": "mp4", "scale": "1920x1080", "frame": "1080", "rate": "4502", "info": "avc1.640028, 30fps", "size": "104.05" } },
-                        "available": {
-                            "audios": [{ "id": "249", "format": "webm", "rate": "57", "info": "opus @ 50k (48000Hz)", "size": "1.40" }, { "id": "250", "format": "webm", "rate": "74", "info": "opus @ 70k (48000Hz)", "size": "1.85" }],
-                            "videos": [{ "id": "394", "format": "mp4", "scale": "256x144", "frame": "144", "rate": "80", "info": "av01.0.00M.08, 30fps", "size": "1.97" }],
-                            "subs": ['en', 'zh-Hans', 'zh-Hant', 'zh-TW'],
-                            // "subs": [],
-                            // "subs": ['auto'],
-                        }
-                    }
+                    ...{"success":true,url:"https://www.bilibili.com/video/BV1xxxxxxxxx","uploader":"heiakimMusic","title":"imma dancer now. feat. Step By Step ID~夏天果然和游乐园更配【雾】","thumbnail":"http://i0.hdslb.com/bfs/archive/08970dd3424419e72a766c1785d601b857dfc012.jpg","filesize":40749834,"duration":210.692}
                 });
                 if (event.readyState === 0) {
                     Develon.notify("已取消请求") // 连接被重置时都会导致错误
@@ -362,51 +158,11 @@
         })
     }
 
-    function download(uri, recode_uri) {
-        if (typeof uri !== "string") {
-            var listFormat = ["mp4", "mkv", "flv", "avi", "webm", "auto"]
-            var tmpHTML = ""
-            for (var i = 0; i < listFormat.length; i++) {
-                tmpHTML += `<tr onclick="javascript: $('#format_${ listFormat[i] }').prop('checked', true)">
-                    <td style="background-color: white"><input checked="checked" id="format_${ listFormat[i] }" type="radio" name="recode" value="${ listFormat[i] }"></td>
-                    <td style="background-color: white; font-weight: bold; cursor: pointer">${ listFormat[i] }</td></tr>`
-            }
-            Develon.confirm(`<span>选择要合并的格式</span><br>
-                <table id="" style="margin: auto; background-color: white">
-                    ${ tmpHTML }
-                </table>`, fun => {
-                    var inputs = $("table input:checked")
-                    var vid = null
-                    var aid = null
-                    var recode = "auto"
-                    var subs = []; // 字幕列表
-                    inputs.each((index, el) => {
-                        if (el.name === "selectedVideo") vid = el.value
-                        if (el.name === "selectedAudio") aid = el.value
-                        if (el.name === "recode") recode = el.value
-                        // 字幕
-                        if (window.sub_type === 'native' && el.name === 'nativeSub') subs.push(el.value);
-                        if (window.sub_type === 'auto' && el.name === 'autoSub') subs.push(el.value);
-                    });
-                    uri = recode_uri + `&format=${ vid }x${ aid }&subs=${subs.join(',')}`
-                    if (recode !== "auto") uri += `&recode=${ recode }`
-                    console.log(`正在请求${ uri }`)
-                    postDownload(uri)
-            })
-            return
-        }
-        Develon.confirm("确认只下载音频或无声视频吗?", fun => {
-            console.log(`正在请求${uri}`)
-            postDownload(uri)
-            return true
-        })
-    }
-
-    function postDownload(uri) {
+    function postDownload(url) {
         var notifyID = Develon.notifyID
-        console.log(`提交下载${ uri }`)
+        console.log(`提交下载${ url }`)
         var req = {
-            url: uri,
+            url: encodeURIComponent(url),
             success: fun => {
                 console.log(`轮询结果`)
                 console.log(fun)
@@ -422,7 +178,7 @@
                 }
                 if (!fun.result.downloading && fun.result.downloadSucceed) {
                     Develon.removeNotify(notifyID)
-                    Develon.confirm(`合并完成, 点击确定下载`, fun2 => {
+                    Develon.confirm(`处理完成, 点击确定下载`, fun2 => {
                         window.open(`/${ fun.result.dest }`)
                         return false;
                     })
@@ -467,78 +223,29 @@
         </form>
     </div>
 
-    <div id="divResult" class="center" style="display: none">
-
-        <div class="available">可用音频</div>
-        <table id="audios">
+    <div id="divResult" class="center">
+        <div class="available">视频信息</div>
+        <table id="info">
             <tr>
-                <th>选中</td>
-                <th>ID</th>
-                <th>编码格式</th>
-                <th>码率(kpbs)</th>
-                <th>大小(MB)</th>
-                <th style="display: none;"></th>
-                <th colspan="2">其它</th>
+                <th>UP主</td>
+                <th>视频标题</th>
+                <th>文件大小</th>
+                <th>视频长度</th>
             </tr>
         </table>
-
-        <div class="available">可用视频</div>
-        <table id="videos">
-            <tr>
-                <th>选中</td>
-                <th>ID</th>
-                <th>编码格式</th>
-                <th>分辨率</th>
-                <th>码率(kpbs)</th>
-                <th>大小(MB)</th>
-                <th colspan="2">其它</th>
-            </tr>
-        </table>
-
-        <div class="available" style="margin-bottom: 0;">封装软字幕</div>
-        <div id="title_subs" style="display: none;">没有任何字幕</div>
-
-        <div id="subs" style="padding-top: 20px;">
-            <div id="native_subs">
-                <div id="title_subs">原生字幕</div>
-                <div class="btn-google-sub" onclick="$('#native_subs').toggle(); $('#auto_subs').toggle(); window.sub_type = 'auto';">谷歌翻译字幕</div>
-                <table id="table_native_subs">
-                    <tr>
-                        <th>选中</td>
-                        <th>语言</th>
-                        <th>下载外挂字幕</th>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- 不主动展示翻译字幕 -->
-            <div id="auto_subs" style="display: none;">
-                <div id="title_subs">翻译字幕</div>
-                <div class="btn-google-sub" onclick="$('#native_subs').toggle(); $('#auto_subs').toggle(); window.sub_type = 'native';">切换原生字幕</div>
-                <table id="table_auto_subs">
-                    <tr>
-                        <th>选中</td>
-                        <th>语言</th>
-                        <th>下载外挂字幕</th>
-                    </tr>
-                </table>
-            </div>
-        </div>
-
+    
         <div style="padding: 20px 0px">
-            <span id="recode" class="button">合并 / 下载</span>
+            <span id="recode" class="button" style="padding: 12px 20px; color: white;">请求下载视频</span>
         </div>
     </div>
 
     <div id="log" class="flex">
     	<p>《更新日志》</p>
     	<p>1：支持下载外挂字幕文件</p>
-    	<p>2: 请按Ctrl+Shift+R强制刷新缓存</p>
+    	<p>2：支持解析BiliBili</p>
+        <p>请按Ctrl+Shift+R强制刷新一下缓存</p>
+        <hr>
     	<p>✩ &nbsp;&nbsp;您的Star和Fork是对开发者最大的支持！</p>
-    </div>
-
-    <div id="wait_subtitle" style="font-family: 'MicroSoft JhengHei'; position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);">
-        <h1 id="info" style="color: mediumaquamarine;">服务器正在处理...</h1>
     </div>
 </body>
 
