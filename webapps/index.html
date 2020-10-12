@@ -80,9 +80,9 @@
     test = false;
     window.sub_type = 'native'; // 字幕类型
     $(() => {
-        if (!!!test) return;
-        url.value = 'https://www.youtube.com/watch?v=XXX';
-        document.querySelector('form').submit();
+        let query = new URL(document.location.href).searchParams.get('url');
+        url.value = query;
+        query && document.querySelector('form').submit();
     })
 </script>
 
@@ -276,7 +276,7 @@
         $("#divResult").fadeOut()
         var url = $('input#url')[0].value
 
-        if (url.match(/https?:\/\/(www\.)?bilibili\.com\/video\/([\w\d]){11,14}$/)) { // 匹配B站视频
+        if (url.match(/^https?:\/\/(www\.|m\.)?bilibili\.com\/video\/([\w\d]){11,14}$/)) { // 匹配B站视频
             // window.document.location.href = `./bilibili.html?url=${encodeURIComponent(url)}`;
             window.document.location.href = `./bilibili.html?url=${url}`;
             return;

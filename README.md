@@ -1,7 +1,5 @@
 # Youtube-dl-REST
 
-## 概要
-
 通过本项目，您可以搭建一个网页，快速下载您中意的Youtube视频。
 在线地址：[https://y2b.123345.xyz](https://y2b.123345.xyz)
 

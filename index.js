@@ -68,6 +68,29 @@ function main() {
         thread.postMessage({ op: 'parse', url, videoID: mr[1] });
     });
 
+    // 解析B站视频
+    app.get('/bili/parse', (req, res) => {
+        let url = req._parsedUrl.query;
+        url = decodeURIComponent(url); // URI解码
+        console.log({ op: '解析(B站):', url });
+
+        if (!url.match(/^https?:\/\/(www\.|m\.)?bilibili\.com\/video\/[\w\d]{11,14}$/)) { // 检查URL合法性
+            console.log(`不合法的B站视频地址: ${url}`);
+            res.send({
+                "error": 'B站视频URL示例:<br /><br />https://www.bilibili.com/<br />video/BV1xxxxxxxxx',
+                "success": false,
+            });
+        }
+        checkDisk(); // 解析视频前先检查磁盘空间
+
+        let thread = new worker_threads.Worker(__filename);
+        thread.once('message', msg => {
+            // console.log(JSON.stringify(msg, null, 1));
+            res.send(msg);
+        });
+        thread.postMessage({ op: 'bili/parse', url, });
+    });
+
     let queue = [];
     app.get('/y2b/download', (req, res) => {
         let { v, format, recode, subs } = req.query;
@@ -309,6 +332,29 @@ function task() {
                 });
                 break;
             } // case subtitle end
+
+            case 'bili-parse': {
+                try {
+                    let id = msg.url.match(/.*video\/([\w\d]+)$/)[1];
+                    let fullpath = `${__dirname}/bilibili/${id}`;
+                    // let cmd_write_info = `youtube-dl -o '${fullpath}/%(id)s/flv.%(ext)s' '${msg.url}' --skip-download --write-info`;
+                    let cmd_write_info = `youtube-dl -o '${fullpath}/flv.%(ext)s' '${msg.url}' --skip-download --write-info`;
+                    let file_info = `${fullpath}/flv.info.json`;
+                    child_process.execSync(cmd_write_info);
+                    let info = JSON.parse(fs.readFileSync(file_info).toString());
+                    let { uploader, title, thumbnail, filesize, duration } = info;
+                    worker_threads.parentPort.postMessage({
+                        success: true,
+                        ...{ uploader, title, thumbnail, filesize, duration },
+                    });
+                } catch (error) {
+                    worker_threads.parentPort.postMessage({
+                        success: false,
+                        error: '解析失败！',
+                    });
+                }
+            } // case bili-parse end
+
             case 'parse': {
                 let audios = [], videos = [];
                 let bestAudio = {}, bestVideo = {};
