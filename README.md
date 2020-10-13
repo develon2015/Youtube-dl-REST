@@ -71,5 +71,6 @@ npm start
 ##### 后来
 
 1. 添加外挂字幕下载功能
+2. 支持解析BiliBili
 
 </details>
