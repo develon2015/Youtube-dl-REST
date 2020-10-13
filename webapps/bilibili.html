@@ -75,7 +75,7 @@
 <!-- 自动化测试 -->
 <script>
     window.test = true; // 测试开关
-    // test = false;
+    test = false;
     window.sub_type = 'native'; // 字幕类型
     $(() => {
         let query = new URL(document.location.href).searchParams.get('url');
@@ -109,6 +109,9 @@
         $("span#recode").bind("click", fun => {
             postDownload(`/bili/download?url=${ encodeURIComponent(r.url) }`);
         });
+
+        // 存储标题
+        window.parsedTitle = r.title;
     }
 
     parse = fun => {
@@ -179,7 +182,12 @@
                 if (!fun.result.downloading && fun.result.downloadSucceed) {
                     Develon.removeNotify(notifyID)
                     Develon.confirm(`处理完成, 点击确定下载`, fun2 => {
-                        window.open(`/${ fun.result.dest }`)
+                        // window.open(`/${ fun.result.dest }`); // 在新标签页中打开链接
+                        let a = document.createElement('a');
+                        a.target = '_blank';
+                        a.download = window.parsedTitle || '下载的视频.flv';
+                        a.href = `/${ fun.result.dest }`;
+                        a.click();
                         return false;
                     })
                     return
