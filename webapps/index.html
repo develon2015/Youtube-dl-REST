@@ -82,6 +82,7 @@
     window.sub_type = 'native'; // 字幕类型
     $(() => {
         let query = new URL(document.location.href).searchParams.get('url');
+        query = decodeURIComponent(url.replace('y2b', 'youtube').replace('y2', 'youtu')); // 还原y2b视频地址
         url.value = query;
         query && document.querySelector('form').submit();
     })

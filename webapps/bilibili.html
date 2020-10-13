@@ -79,7 +79,7 @@
     window.sub_type = 'native'; // 字幕类型
     $(() => {
         let query = new URL(document.location.href).searchParams.get('url');
-        url.value = query;
+        url.value = query; // B站视频地址无处理
         query && document.querySelector('form').submit();
     });
 </script>
@@ -119,7 +119,7 @@
         var url = $('input#url')[0].value
 
         if (url.match(/.*?youtu.*/)) { // 匹配油管视频
-            window.document.location.href = `./?url=${url}`;
+            window.document.location.href = `./?url=${encodeURIComponent(url.replace('youtube', 'y2b').replace('youtu', 'y2'))}`;
             return;
         }
         // if (!url.match(/^https?:\/\/(www\.|m\.)?bilibili\.com\/video\/BV1[\w\d]{8,10}$/)) { // 匹配B站视频
