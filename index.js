@@ -52,6 +52,7 @@ function main() {
     });
     app.use('/file', express.static(`${__dirname}/tmp`));
     app.use('/info', express.static(`${__dirname}/tmp`));
+    app.use('/bili_file', express.static(`${__dirname}/bilibili`));
 
     app.get('/y2b/parse', (req, res) => {
         let url = req._parsedUrl.query;
@@ -503,7 +504,7 @@ format code  extension  resolution note
                             "v": '',
                             "downloading": false,
                             "downloadSucceed": true,
-                            "dest": `bili_file/bilibili/${id}/${id}.flv`,
+                            "dest": `bili_file/${id}/${id}.flv`,
                             "metadata": '',
                         },
                     });
