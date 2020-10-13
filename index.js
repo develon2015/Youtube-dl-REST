@@ -500,7 +500,7 @@ format code  extension  resolution note
                     worker_threads.parentPort.postMessage({
                         "success": true,
                         "result": {
-                            "v": videoID,
+                            "v": '',
                             "downloading": false,
                             "downloadSucceed": true,
                             "dest": `bili_file/bilibili/${id}/${id}.flv`,
