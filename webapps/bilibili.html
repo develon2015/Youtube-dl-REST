@@ -162,7 +162,7 @@
         var notifyID = Develon.notifyID
         console.log(`提交下载${ url }`)
         var req = {
-            url: encodeURIComponent(url),
+            url: url,
             success: fun => {
                 console.log(`轮询结果`)
                 console.log(fun)
