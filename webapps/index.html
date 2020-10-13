@@ -269,7 +269,7 @@
         //$("#divResult").css("display", "block")
         $("#divResult").fadeIn()
 
-        $("span#recode").bind("click", fun => {
+        $("span#recode").off('click').bind("click", fun => {
             download(null, `/y2b/download?v=${ res.v }`) // got v, select a, v format & recode ($("table input:checked"))
         })
     }
