@@ -57,7 +57,7 @@ function main() {
         info = JSON.parse(info);
         console.log({'标题': info.title}); // or 'fulltitle'
         let ext = req.url.match(/.*(\.\w+)$/)[1];
-        res.set({'Content-Disposition': `attachment; filename="${encodeURI(info.title + ext)}"; filename*=UTF-8''${encodeURI(info.title + ext)}`});
+        res.set({'Content-Disposition': `attachment; filename="${encodeURIComponent(info.title + ext)}"; filename*=UTF-8''${encodeURI(info.title + ext)}`});
         next();
     });
     app.use('/file', express.static(`${__dirname}/tmp`));
