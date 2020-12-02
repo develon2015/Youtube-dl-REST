@@ -1,3 +1,5 @@
+const DISABLE = 0
+
 const express = require('express');
 const json = require('body-parser').json;
 const child_process = require('child_process');
@@ -13,7 +15,7 @@ main 主线程
 function main() {
     let app = new express();
     app.use('/y2b', (req, res, next) => {
-        if (false) {
+        if (DISABLE) {
             res.send({
                 success: false,
                 error: `由于服务器请求次数过多<br >服务器IP已被Youtube拉黑<br ><br >请等待解封<br>你还可以自行部署或使用B站`,
