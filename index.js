@@ -237,7 +237,7 @@ function main() {
                 // /dev/sda2        39G   19G   19G  51% /
                 let mr = it.match(/.*\s(\d+)%/);
                 if (!!mr && Number.parseInt(mr[1]) > 90) {
-                    let cmd = `rm -r '${__dirname}/tmp' '${__dirname}/bilibili`;
+                    let cmd = `rm -r '${__dirname}/tmp' '${__dirname}/bilibili'`;
                     console.log({ '清理空间': cmd });
                     child_process.execSync(cmd);
                     queue = [];
