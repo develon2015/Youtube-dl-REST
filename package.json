@@ -1,0 +1,13 @@
+{
+  "name": "youtube-dl-rest",
+  "version": "1.0.0",
+  "description": "Youtube-dl-REST By Node.js",
+  "scripts": {
+    "start:dev": "nodemon index.js",
+    "start": "node index.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
