@@ -68,6 +68,10 @@
     #wait_subtitle {
         display: none;
     }
+
+    #thumbnail {
+        width: 30%;
+    }
 </style>
 
 <!-- <script src="js/loadbar.js"></script> -->
@@ -89,6 +93,37 @@
 </script>
 
 <script>
+    function info(code) {
+        switch (code) {
+            case 'zh':
+            case 'zh-CN':
+            case 'zh-Hans': return ' (中文-简体)';
+            case 'zh-HK':
+            case 'zh-Hant': return ' (中文-繁體)';
+            case 'zh-TW': return ' (中文-台灣)';
+            case 'ja':
+            case 'ja-JP': return ' (日本語)';
+            case 'en': return ' (English)';
+            case 'ko': return ' (韓國語)';
+            case 'ru': return ' (русский)';
+            case 'fr': return ' (français)';
+        }
+        return '';
+    }
+
+    /**
+     * @param {string[]} subs 原生字幕列表
+     */
+    function getLocale(subs, locale) {
+        if (subs.length < 1)
+            return locale;
+        if (subs[0] == 'auto')
+            return locale;
+        if (locale != subs[0])
+            return `${locale}-${subs[0]}`;
+        return locale;
+    }
+
     // AJAX完成, 填充表单
     function fill(res) {
         $("#divResult td").remove()
@@ -132,24 +167,6 @@
             }
         }
 
-        function info(code) {
-            switch (code) {
-                case 'zh':
-                case 'zh-CN':
-                case 'zh-Hans': return ' (中文-简体)';
-                case 'zh-HK':
-                case 'zh-Hant': return ' (中文-繁體)';
-                case 'zh-TW': return ' (中文-台灣)';
-                case 'ja':
-                case 'ja-JP': return ' (日本語)';
-                case 'en': return ' (English)';
-                case 'ko': return ' (韓國語)';
-                case 'ru': return ' (русский)';
-                case 'fr': return ' (français)';
-            }
-            return '';
-        }
-
         // 绑定下载外挂字幕事件
         window.downloadOutSub = (/** 语种 */ locale, /** 字幕后缀 */ ext, /** 原生字幕: 'native', 翻译字幕: 'auto' */ type) => {
             if (false) { // 模拟保存文件
@@ -189,16 +206,20 @@
                 accepts: 'application/json',
                 data: JSON.stringify({
                     id: res.v, // 字幕对应视频的ID
-                    locale, // 字幕语种
+                    locale: getLocale(res.available.subs, locale), // 字幕语种
                     ext, // 字幕格式
                     type, // 原生或翻译字幕
                 }),
                 success(resp) { // 字幕请求成功
                     console.log(resp);
-                    let { title, filename, text } = resp;
+                    let { success, title, filename, text } = resp;
+                    if (!success) {
+                        win.postMessage(false);
+                        return;
+                    }
                     let a = document.createElement('a');
                     a.download = filename;
-                    a.href = `data: application/octet-stream; utf-8,${text}`;
+                    a.href = `data: application/octet-stream; base64,${text}`;
                     a.click();
                     win.postMessage(true);
                 },
@@ -272,6 +293,9 @@
         $("span#recode").off('click').bind("click", fun => {
             download(null, `/y2b/download?v=${ res.v }`) // got v, select a, v format & recode ($("table input:checked"))
         })
+
+        $("#title").text(res.title || '解析结果');
+        $("img#thumbnail")[0].src = '/pxy?url=' + res.thumbnail;
     }
 
     parse = fun => {
@@ -469,6 +493,10 @@
     </div>
 
     <div id="divResult" class="center" style="display: none">
+        <div class="available">
+            <h1 id="title">解析结果</h1>
+            <img id="thumbnail">
+        </div>
 
         <div class="available">可用音频</div>
         <table id="audios">

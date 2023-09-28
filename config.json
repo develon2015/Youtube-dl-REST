@@ -3,5 +3,5 @@
 	"port": 80,
 	"cookie": "cookies.txt",
 	"blacklist": "blacklist.txt",
-	"mode": "演示模式"
+	"mode": "非演示模式（演示模式关闭转码功能）"
 }
