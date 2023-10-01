@@ -70,7 +70,7 @@
     }
 
     #thumbnail {
-        width: 30%;
+        max-width: 30%;
     }
 </style>
 
@@ -107,6 +107,7 @@
             case 'ko': return ' (韓國語)';
             case 'ru': return ' (русский)';
             case 'fr': return ' (français)';
+            case 'danmaku': return ' (弹幕)';
         }
         return '';
     }
@@ -119,13 +120,23 @@
             return locale;
         if (subs[0] == 'auto')
             return locale;
-        if (locale != subs[0])
+        if (!subs.includes(locale))
             return `${locale}-${subs[0]}`;
         return locale;
     }
 
+    /** 代理封面图片 */
+    function getProxyImg(src) {
+        if (src.startsWith('https://i.ytimg.com/') || src.match(/^https?:\/\/i\d\.hdslb\.com\//)) {
+            return '/pxy?url=' + src;
+        }
+        return src;
+    }
+
     // AJAX完成, 填充表单
     function fill(res) {
+        $("#title").text(res.title || '解析结果');
+        $("img#thumbnail")[0].src = getProxyImg(res.thumbnail);
         $("#divResult td").remove()
         var tr = $("#divResult tr")
 
@@ -138,7 +149,7 @@
             var r = res.available.audios[i]
             row = $(`<tr>
                 <td><input class="td" id="audio${ r.id }" value="${ r.id }" name="selectedAudio" type="radio" style="height: 20px"></td>
-                <td><a href="javascript: void(0)" onclick="window.download('/y2b/download?v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
+                <td><a href="javascript: void(0)" onclick="window.download('/y2b/download?website=${res.website}&v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
                 <td>${ r.format }</td>
                 <td>${ r.rate }</td>
                 <td>${ r.size }</td>
@@ -154,7 +165,7 @@
             var r = res.available.videos[i]
             row = $(`<tr>
                 <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="radio" style="height: 20px"></td>
-                <td><a href="javascript: void(0)" onclick="window.download('/y2b/download?v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
+                <td><a href="javascript: void(0)" onclick="window.download('/y2b/download?website=${res.website}&v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
                 <td>${ r.format }</td>
                 <td>${ r.scale }</td>
                 <td>${ r.rate }</td>
@@ -205,6 +216,7 @@
                 contentType: 'application/json',
                 accepts: 'application/json',
                 data: JSON.stringify({
+                    website: res.website,
                     id: res.v, // 字幕对应视频的ID
                     locale: getLocale(res.available.subs, locale), // 字幕语种
                     ext, // 字幕格式
@@ -240,7 +252,8 @@
                 <td style="user-select: none;">
                     ${
                         (() => {
-                            return ['.srt', '.ass', '.vtt', '.lrc'].reduce((html, crt, index) => {
+                            let list = (r == 'danmaku') ? ['.xml'] : ['.srt', '.ass', '.vtt', '.lrc'];
+                            return list.reduce((html, crt, index) => {
                                 return html + `<a href="javascript: void(0);" onclick="downloadOutSub('${r}', '${crt}', 'native')">${crt}</a><span>&nbsp;&nbsp;</span>`;
                             }, "<span>&nbsp;&nbsp;</span>");
                         })()
@@ -254,6 +267,9 @@
         if (res.available.subs.length === 0) { // 没有字幕
             $('#title_subs').html('该视频沒有任何字幕').show();
             $('#subs').hide(); // 隐藏表格
+        } else if (res.website == 'bilibili') {
+            $('#title_subs').html('B站视频可以尝试下载字幕或弹幕').show();
+            $('#subs').show(); // 显示表格
         } else { // 有字幕, 可以翻译
             $('#native_subs').show(); // 显示原生字幕列表
             $('#auto_subs').hide(); // 隐藏翻译字幕列表
@@ -291,13 +307,11 @@
         $("#divResult").fadeIn()
 
         $("span#recode").off('click').bind("click", fun => {
-            download(null, `/y2b/download?v=${ res.v }`) // got v, select a, v format & recode ($("table input:checked"))
+            download(null, `/y2b/download?website=${res.website}&v=${ res.v }`) // got v, select a, v format & recode ($("table input:checked"))
         })
-
-        $("#title").text(res.title || '解析结果');
-        $("img#thumbnail")[0].src = '/pxy?url=' + res.thumbnail;
     }
 
+    let allowSearchParams = ['v'];
     parse = fun => {
         if (window.blacked === 1) {
             Develon.notify('由于服务器请求次数过多<br >服务器IP已被Youtube拉黑<br ><br >请等待解封<br>你还可以自行部署或使用B站');
@@ -305,11 +319,16 @@
         $("#divResult").fadeOut()
         var url = $('input#url')[0].value
 
-        if (url.match(/^https?:\/\/(www\.|m\.)?bilibili\.com\/video\/([\w\d]){11,14}$/)) { // 匹配B站视频
+        // if (url.match(/^https?:\/\/(www\.|m\.)?bilibili\.com\/video\/([\w\d]){11,14}$/)) { // 匹配B站视频
             // window.document.location.href = `./bilibili.html?url=${encodeURIComponent(url)}`;
-            window.document.location.href = `./bilibili.html?url=${url}`;
-            return;
-        }
+            // window.document.location.href = `./bilibili.html?url=${url}`;
+            // return;
+        // }
+        let inputURL = new URL(url);
+        let params = allowSearchParams.filter(it => !!inputURL.searchParams.get(it)).map(it => it + '=' + inputURL.searchParams.get(it));
+        inputURL.search = `?${params.join('&')}`;
+        url = inputURL.toString();
+        $('input#url')[0].value = url;
 
         var id = Develon.notifyID // 获取即将弹出的通知框ID
         var parseRequest = $.ajax({
@@ -524,7 +543,7 @@
             </tr>
         </table>
 
-        <div class="available" style="margin-bottom: 0;">封装软字幕</div>
+        <div class="available" style="margin-bottom: 0;">字幕</div>
         <div id="title_subs" style="display: none;">没有任何字幕</div>
 
         <div id="subs" style="padding-top: 20px;">
@@ -561,9 +580,10 @@
 
     <div id="log" class="flex">
     	<p>《更新日志》</p>
-    	<p>1：支持下载外挂字幕文件</p>
-    	<p>2：支持解析BiliBili</p>
-        <p>请按Ctrl+Shift+R强制刷新一下缓存</p>
+    	<p>1：下载引擎替换为yt-dlp</p>
+    	<p>2：支持解析BiliBili字幕和弹幕</p>
+    	<p>3：支持显示标题和封面</p>
+        <!-- <p>请按Ctrl+Shift+R强制刷新一下缓存</p> -->
         <hr>
     	<p>✩ &nbsp;&nbsp;您的Star和Fork是对开发者最大的支持！</p>
     </div>

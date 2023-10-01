@@ -5,8 +5,9 @@ const json = require('body-parser').json;
 const child_process = require('child_process');
 const worker_threads = require('worker_threads');
 const fs = require('fs');
-const getRemoteIP = require('./get-remote-ip.js');
-const http = require('https');
+const { getRemoteIP, getWebsiteUrl } = require('./utils.js');
+const https = require('https');
+const http = require('http');
 
 const config = require('./config.json'); // 加载配置文件
 
@@ -72,11 +73,21 @@ function main() {
         url = decodeURIComponent(url.replace('y2b', 'youtube').replace('y2', 'youtu')); // "链接已重置"大套餐
         console.log({ op: '解析', url });
 
-        let mr = url.match(/^https?:\/\/(?:youtu.be\/|(?:www|m).youtube.com\/watch\?v=)([\w-]{11})$/);
-        if (!!!mr) {
+        let y2b = url.match(/^https?:\/\/(?:youtu.be\/|(?:www|m).youtube.com\/(?:watch|shorts)(?:\/|\?v=))([\w-]{11})$/);
+        let bilibili = url.match(/^https?:\/\/(?:www\.|m\.)?bilibili\.com\/video\/([\w\d]{11,14})\/?$/);
+        let website;
+        switch (true) {
+            case y2b != null:
+                website = 'y2b';
+                break;
+            case bilibili != null:
+                website = 'bilibili';
+                break;
+        }
+        if (!!! website) {
             console.log('reject');
             res.send({
-                "error": "请提供一个Youtube视频URL<br>例如：<br>https://www.youtube.com/watch?v=xxxxxxxxxxx",
+                "error": "请提供一个Youtube视频URL<br>例如：<br>https://youtu.be/xxxxxxxxxxx<br>https://www.bilibili.com/video/xx",
                 "success": false
             });
             return;
@@ -88,7 +99,7 @@ function main() {
             // console.log(JSON.stringify(msg, null, 1));
             res.send(msg);
         });
-        thread.postMessage({ op: 'parse', url, videoID: mr[1] });
+        thread.postMessage({ op: 'parse', website, url, videoID: (y2b || bilibili)[1] });
     });
 
     // 解析B站视频
@@ -153,11 +164,11 @@ function main() {
     }); // /bili/download end
 
     app.get('/y2b/download', (req, res) => {
-        let { v, format, recode, subs } = req.query;
-        if (!!!v.match(/^[\w-]{11}$/))
+        let { website, v, format, recode, subs } = req.query;
+        if (!!!v.match(/^[\w-]{11,14}$/))
             return res.send({ "error": "Qurey参数v错误: 请提供一个正确的Video ID", "success": false });
 
-        if (!!!format.match(/^(\d+)(?:x(\d+))?$/))
+        if (!!!format.match(/^([\w\d-]+)(?:x([\w\d-]+))?$/))
             return res.send({ "error": "Query参数format错误: 请求的音频和视频ID必须是数字, 合并格式为'视频IDx音频ID'", "success": false });
 
         if (config.mode === '演示模式' && !!recode)
@@ -187,7 +198,7 @@ function main() {
                 console.log(JSON.stringify(msg, null, 1));
                 queue[JSON.stringify(req.query)] = msg;
             });
-            thread.postMessage({ op: 'download', videoID: v, format, recode, subs });
+            thread.postMessage({ op: 'download', website, videoID: v, format, recode, subs });
         } // if end
         // 发送轮询结果
         res.send(queue[JSON.stringify(req.query)]);
@@ -196,16 +207,17 @@ function main() {
     // API: 下载字幕
     app.use(json());
     app.post('/y2b/subtitle', (req, res) => {
-        let { id, locale, ext, type } = req.body;
+        let { website, id, locale, ext, type } = req.body;
 
-        if (!id.match(/^[\w-]{11}$/) ||
-            !ext.match(/^.(srt|ass|vtt|lrc)$/) ||
+        if (!id.match(/^[\w-]{11,14}$/) ||
+            !ext.match(/^.(srt|ass|vtt|lrc|xml)$/) ||
             !type.match(/^(auto|native)$/) ||
-            !locale.match(/^([a-z]{2}(-[a-zA-Z]{2,4})?)+$/) ||
+            // !locale.match(/^([a-z]{2}(-[a-zA-Z]{2,4})?)+$/) ||
             false
         ) {
             console.log('字幕请求预检被禁止, 可疑请求:', req.body);
             res.send({ success: false });
+            return;
         }
         // checkDisk(); // 下载字幕前先检查磁盘空间
         let thread = new worker_threads.Worker(__filename); // 启动子线程
@@ -220,15 +232,16 @@ function main() {
                 res.send({ success: false });
             }
         });
-        thread.postMessage({ op: 'subtitle', id, locale, ext, type });
+        thread.postMessage({ op: 'subtitle', website, id, locale, ext, type });
     }); // /youtube/subtitle end
 
     app.get('/pxy', (req, res) => {
         let url = req.query.url;
-        if (!url.startsWith('https://i.ytimg.com/')) {
+        if (!url.startsWith('https://i.ytimg.com/') && !url.match(/^https?:\/\/i\d\.hdslb\.com\//)) {
             res.status(403).end();
+            return;
         }
-        http.get(url, (response) => {
+        (url.startsWith('https://') ? https : http).get(url, (response) => {
             res.writeHead(response.statusCode, response.statusMessage, response.headers);
             response.pipe(res);
         }).on('error', (err) => {
@@ -288,7 +301,7 @@ function getVideo(id, format, scale, frame, rate, info, size) {
  */
 function catchSubtitle(line) {
     if (line.match(/^Language .*/)) return 0;
-    let mr = line.match(/^([a-z]{2}(?:-[a-zA-Z]+)?).*/);
+    let mr = line.match(/^(danmaku|[a-z]{2}(?:-[a-zA-Z]+)?).*/);
     if (mr) return mr[1];
     return -1;
 }
@@ -364,21 +377,21 @@ function task() {
         switch (msg.op) {
             case 'subtitle': {
                 console.log(msg);
-                let { id, locale, ext, type } = msg;
+                let { id, locale, ext, type, website } = msg;
                 // 先下载字幕
                 let fullpath = `${__dirname}/tmp/${id}`; // 字幕工作路径
                 let cmd_download = '';
                 if (type === 'native') // 原生字幕
-                    cmd_download = `yt-dlp --sub-lang '${locale}' -o '${fullpath}/%(id)s.%(ext)s' --write-sub --skip-download --write-info-json 'https://youtu.be/${id}' ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''}`;
+                    cmd_download = `yt-dlp --sub-lang '${locale}' -o '${fullpath}/%(id)s.%(ext)s' --write-sub --skip-download --write-info-json ${getWebsiteUrl(website, id)} ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''}`;
                 else if (type === 'auto') // 切换翻译通道
-                    cmd_download = `yt-dlp --sub-lang '${locale}' -o '${fullpath}/%(id)s.%(ext)s' --write-auto-sub --skip-download --write-info-json 'https://youtu.be/${id}' ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''}`;
+                    cmd_download = `yt-dlp --sub-lang '${locale}' -o '${fullpath}/%(id)s.%(ext)s' --write-auto-sub --skip-download --write-info-json ${getWebsiteUrl(website, id)} ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''}`;
                 console.log(`下载字幕, 命令: ${cmd_download}`);
                 try {
                     child_process.execSync(cmd_download); // 执行下载
                     // 文件前缀
                     let before = `${fullpath}/${id}`;
                     // 字幕文件路径
-                    let file = `${before}.${locale}.vtt`; // 下载的字幕一定是vtt格式
+                    let file = `${before}.${locale}.${locale == 'danmaku' ? 'xml' : website == 'y2b' ? 'vtt' : 'srt'}`; // B站的字幕一定是srt格式, 或xml格式(B站弹幕)，y2b是vtt格式
                     console.log('下载的字幕:', file);
                     let file_convert = `${before}.${locale}${ext}`; // 要转换的字幕文件
                     if (file != file_convert) {
@@ -455,24 +468,26 @@ function task() {
 
                 // break;
                 rs.formats.forEach(it => {
+                    let length = (it.filesize_approx ? '≈' : '') + ((it.filesize || it.filesize_approx || 0) / 1024 / 1024).toFixed(2);
                     if (it.audio_ext != 'none') {
-                        audios.push(getAudio(it.format_id, it.ext, (it.abr || 0).toFixed(0), it.format_note, ((it.filesize || 0) / 1024 / 1024).toFixed(2)))
+                        audios.push(getAudio(it.format_id, it.ext, (it.abr || 0).toFixed(0), it.format_note || it.format || '', length));
                     } else if (it.video_ext != 'none') {
-                        videos.push(getVideo(it.format_id, it.ext, it.resolution, it.height, (it.vbr || 0).toFixed(0), it.format_note || '', ((it.filesize || 0) / 1024 / 1024).toFixed(2)));
+                        videos.push(getVideo(it.format_id, it.ext, it.resolution, it.height, (it.vbr || 0).toFixed(0), it.format_note || it.format || '', length));
                     }
                 });
 
                 // sort
                 // audios.sort((a, b) => a.rate - b.rate);
                 // videos.sort((a, b) => a.rate - b.rate);
-                bestAudio = audios[audios.length - 1];
-                bestVideo = videos[videos.length - 1];
+                bestAudio = Array.from(audios).sort((a, b) => a.rate - b.rate)[audios.length - 1];
+                bestVideo = Array.from(videos).sort((a, b) => a.rate - b.rate)[videos.length - 1];
                 
                 let subs = parseSubtitle(msg); // 解析字幕
 
                 worker_threads.parentPort.postMessage({
                     "success": true,
                     "result": {
+                        "website": msg.website,
                         "v": msg.videoID,
                         "title": rs.title,
                         "thumbnail": rs.thumbnail,
@@ -532,11 +547,11 @@ function task() {
             }
 
             case 'download': {
-                let { videoID, format, recode, subs } = msg; // subs字幕内封暂未实现
+                let { videoID, format, recode, subs, website } = msg; // subs字幕内封暂未实现
                 const path = `${videoID}/${format}`;
                 const fullpath = `${__dirname}/tmp/${path}`;
                 let cmd = //`cd '${__dirname}' && (cd tmp > /dev/null || (mkdir tmp && cd tmp)) &&` +
-                    `yt-dlp  ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''} 'https://www.youtube.com/watch?v=${videoID}' -f ${format.replace('x', '+')} ` +
+                    `yt-dlp  ${config.cookie !== undefined ? `--cookies ${config.cookie}` : ''} ${getWebsiteUrl(website, videoID)} -f ${format.replace('x', '+')} ` +
                     `-o '${fullpath}/${videoID}.%(ext)s' ${recode !== undefined ? `--recode ${recode}` : ''} -k --write-info-json`;
                 console.log('下载视频, 命令:', cmd);
                 try {

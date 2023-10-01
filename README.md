@@ -1,7 +1,7 @@
 # Youtube-dl-REST
 
-通过本项目，您可以搭建一个网页，快速下载您中意的Youtube视频。
-在线地址：[https://y2b.123345.xyz](https://y2b.123345.xyz)
+通过本项目，您可以搭建一个网页，快速下载各种Youtube、Bili视频。
+在线地址：[https://y2b.455556.xyz](https://y2b.455556.xyz)
 
 
 
@@ -21,11 +21,11 @@ sudo snap install node --classic --channel=14
 node -v
 ```
 
-### 2.安装[youtube-dl](https://youtube-dl.org/)和[FFmpeg](https://github.com/FFmpeg/FFmpeg)
+### 2.安装[yt-dlp](https://github.com/yt-dlp/yt-dlp)和[FFmpeg](https://github.com/yt-dlp/yt-dlp)
 
-确保`youtube-dl`命令和`ffmpeg`命令可用:
+确保`yt-dlp`命令和`ffmpeg`命令可用:
 ```
-sudo youtube-dl -U
+sudo yt-dlp -U
 ffmpeg -version
 ```
 
@@ -72,5 +72,11 @@ npm start
 
 1. 添加外挂字幕下载功能
 2. 支持解析BiliBili
+
+##### 接着
+
+1：下载引擎替换为yt-dlp
+2：支持解析BiliBili字幕和弹幕
+3：支持显示标题和封面
 
 </details>
