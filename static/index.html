@@ -149,7 +149,7 @@
             var r = res.available.audios[i]
             row = $(`<tr>
                 <td><input class="td" id="audio${ r.id }" value="${ r.id }" name="selectedAudio" type="radio" style="height: 20px"></td>
-                <td><a href="javascript: void(0)" onclick="window.download('/y2b/download?website=${res.website}&v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
+                <td><a href="javascript: void(0)" onclick="window.download('/y2b/download?website=${res.website}&v=${ res.v }&p=${res.p||''}&format=${ r.id }')">${ r.id }</a></td>
                 <td>${ r.format }</td>
                 <td>${ r.rate }</td>
                 <td>${ r.size }</td>
@@ -165,7 +165,7 @@
             var r = res.available.videos[i]
             row = $(`<tr>
                 <td><input class="td" id="video${ r.id }" value="${ r.id }" name="selectedVideo" type="radio" style="height: 20px"></td>
-                <td><a href="javascript: void(0)" onclick="window.download('/y2b/download?website=${res.website}&v=${ res.v }&format=${ r.id }')">${ r.id }</a></td>
+                <td><a href="javascript: void(0)" onclick="window.download('/y2b/download?website=${res.website}&v=${ res.v }&p=${res.p||''}&format=${ r.id }')">${ r.id }</a></td>
                 <td>${ r.format }</td>
                 <td>${ r.scale }</td>
                 <td>${ r.rate }</td>
@@ -218,6 +218,7 @@
                 data: JSON.stringify({
                     website: res.website,
                     id: res.v, // 字幕对应视频的ID
+                    p: res.p,
                     locale: getLocale(res.available.subs, locale), // 字幕语种
                     ext, // 字幕格式
                     type, // 原生或翻译字幕
@@ -307,11 +308,11 @@
         $("#divResult").fadeIn()
 
         $("span#recode").off('click').bind("click", fun => {
-            download(null, `/y2b/download?website=${res.website}&v=${ res.v }`) // got v, select a, v format & recode ($("table input:checked"))
+            download(null, `/y2b/download?website=${res.website}&v=${ res.v }&p=${res.p||''}`) // got v, select a, v format & recode ($("table input:checked"))
         })
     }
 
-    let allowSearchParams = ['v'];
+    let allowSearchParams = ['v', 'p'];
     parse = fun => {
         if (window.blacked === 1) {
             Develon.notify('由于服务器请求次数过多<br >服务器IP已被Youtube拉黑<br ><br >请等待解封<br>你还可以自行部署或使用B站');
