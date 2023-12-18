@@ -193,6 +193,10 @@ function main() {
      * 检测磁盘空间, 必要时清理空间并清空队列queue
      */
     function checkDisk() {
+        let content = fs.readFileSync(config.cookie).toString();
+        if (content.trim() == '') {
+            fs.rmSync(config.cookie);
+        }
         try {
             let df = child_process.execSync(`df -h .`).toString();
             df.split('\n').forEach(it => {
