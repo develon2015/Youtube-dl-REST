@@ -4,10 +4,24 @@
 在线地址：[https://y2b.455556.xyz](https://y2b.455556.xyz)
 
 
-
-
-
 ## 安装
+
+如果您使用docker，推荐使用以下命令运行本项目：
+
+```
+docker volume create vol
+docker run -it -d --name youtube-dl-rest -p 80:80 -v vol:/Youtube-dl-REST imgxx/youtube-dl-rest
+```
+
+你可能需要修改 config.json 、替换自己的 cookies.txt 等文件，然后重启容器：
+
+```
+vi /var/lib/docker/volumes/vol/_data/config.json
+vi /var/lib/docker/volumes/vol/_data/cookies.txt
+docker restart youtube-dl-rest
+```
+
+如果您不使用docker，则按以下步骤进行安装：
 
 ### 1.安装Node.js
 
@@ -44,9 +58,6 @@ npm install
 ```
 npm start
 ```
-
-
-
 
 
 ## 更新记录
