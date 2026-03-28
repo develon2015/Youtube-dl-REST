@@ -3,6 +3,11 @@ const DISABLE = 0
 const express = require('express');
 const json = require('body-parser').json;
 const child_process = require('child_process');
+// Shell escape helper to prevent command injection
+function shellEscape(str) {
+    return "'" + String(str).replace(/'/g, "'\\''") + "'";
+}
+
 const worker_threads = require('worker_threads');
 const fs = require('fs');
 const { getRemoteIP, getWebsiteUrl } = require('./utils.js');
@@ -258,7 +263,7 @@ function catchSubtitle(line) {
  */
 function parseSubtitle(msg) {
     try {
-        let cmd = `yt-dlp --list-subs ${config.cookie !== undefined ? `--cookies "${config.cookie}"` : ''} '${msg.url}' 2> /dev/null`
+        let cmd = `yt-dlp --list-subs ${config.cookie !== undefined ? `--cookies ${shellEscape(config.cookie)}` : ''} ${shellEscape(msg.url)} 2> /dev/null`
         console.log(`解析字幕, 命令: ${cmd}`);
         let rs = child_process.execSync(cmd).toString().split(/(\r\n|\n)/);
 
